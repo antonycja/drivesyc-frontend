@@ -10,7 +10,7 @@ import AccountDropdown from "./AccountDropdown"
 export default function Navbar({ className }) {
     const auth = useAuth()
 
-    const defaultClasses = "sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/60 shadow-sm"
+    const defaultClasses = "fixed top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/60 shadow-sm"
     const finalClass = className || defaultClasses
 
     return (

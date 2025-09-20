@@ -37,9 +37,8 @@ export default function AccountDropdown({ className }) {
 
     const handleLogout = async () => {
         try {
-            await fetch('/api/logout', { method: 'POST' })
-            auth.logout()
-            router.push('/')
+            router.push('/auth/logout')
+
         } catch (error) {
             console.error('Logout error:', error)
             router.push('/api/logout')

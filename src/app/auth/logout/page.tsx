@@ -25,6 +25,7 @@ export default function LogoutPage() {
       if (response.ok) {
         setLogoutSuccess(true);
         auth.logout()
+        
         // Redirect to login page after 2 seconds
         setTimeout(() => {
           router.replace('/auth/login');

@@ -14,7 +14,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
       {/* Hero Section */}
-      <section className="container mx-auto px-4 py-16 lg:py-24">
+      <section className="container mx-auto px-4 pb-16 lg:py-24">
         <div className="text-center max-w-4xl mx-auto">
         <h1>{auth.isAuthenticated ? "You are logged": "not logged in"}</h1>
           <Badge variant="secondary" className="mb-6 bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800">
