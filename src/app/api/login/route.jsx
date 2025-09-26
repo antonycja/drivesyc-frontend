@@ -15,13 +15,10 @@ export async function POST(request) {
     delete requestData.emailOrPhone
 
 
-    const response = await ApiProxy.post(API_LOGIN_URL, requestData, false)
-
-    const responseData = await response.json();
-
-    if (response.ok) {
-        const access = responseData.access_token
-        const refresh = responseData.refresh_token
+    const { data, status } = await ApiProxy.post(API_LOGIN_URL, requestData, false)
+    if (status === 200) {
+        const access = data.access_token
+        const refresh = data.refresh_token
         await setToken(access, requestData.rememberMe)
         await setRefreshToken(refresh)
         let route = '/dashboard'
@@ -30,5 +27,5 @@ export async function POST(request) {
     }
 
 
-    return NextResponse.json({ loggedIn: false, ...responseData }, { status: 400 })
+    return NextResponse.json({ loggedIn: false, ...data }, { status: 400 })
 }

@@ -54,3 +54,26 @@ export async function setRefreshToken(authRefreshToken, rememberMe) {
         maxAge: rememberMe ? 30 * 24 * 60 * 60 : process.env.COOKIES_EXP, // 30 days or 1 day
     });
 }
+
+export async function getTokenInfo(authToken) {
+    try {
+        if (!authToken) throw new Error("No token provided");
+
+        // JWT structure: header.payload.signature
+        const tokenParts = authToken.split(".");
+        if (tokenParts.length !== 3) throw new Error("Invalid token format");
+
+        const payloadBase64 = tokenParts[1];
+        // Decode Base64 (handle URL-safe base64)
+        const payloadJson = atob(payloadBase64.replace(/-/g, "+").replace(/_/g, "/"));
+        const payload = JSON.parse(payloadJson);
+
+        return payload.user;
+    } catch (error) {
+        console.error("Failed to decode token:", error);
+        return {
+            valid: false,
+            error: error.message
+        };
+    }
+}

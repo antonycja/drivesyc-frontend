@@ -34,7 +34,7 @@ const ownerNavigation = [
     name: 'Bookings',
     icon: Calendar,
     children: [
-      { name: 'All Bookings', href: '/owner/bookings' },
+      { name: 'All Bookings', href: '/bookings' },
       { name: 'Create Booking', href: '/owner/bookings/create' },
       { name: 'Calendar View', href: '/owner/bookings/calendar' },
     ],
@@ -95,7 +95,7 @@ export function OwnerSidebar({ className }) {
   const pathname = usePathname();
   const [openMenus, setOpenMenus] = useState({
     // Auto-open the current section
-    Bookings: pathname.startsWith('/owner/bookings'),
+    Bookings: pathname.startsWith('/bookings'),
     Instructors: pathname.startsWith('/owner/instructors'),
     Vehicles: pathname.startsWith('/owner/vehicles'),
     Students: pathname.startsWith('/owner/students'),

@@ -1,77 +1,184 @@
 'use client'
 import { AppSidebar } from "@/components/layout/app-sidebar"
 import {
-    Breadcrumb,
-    BreadcrumbItem,
-    BreadcrumbLink,
-    BreadcrumbList,
-    BreadcrumbPage,
-    BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
-import { Separator } from "@/components/ui/separator"
-import {
     SidebarInset,
     SidebarProvider,
-    SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { OwnerSidebar } from '@/components/layout/OwnerSidebar'
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/components/auth/utils/authProvider';
-import { useEffect } from 'react';
+import { use, useEffect, useState } from 'react';
 
-import {
-    Users,
-    Calendar,
-    Plus,
-    Car,
-    DollarSign,
-    BarChart3,
-    Clock,
-    Settings,
-    Eye,
-    UserPlus,
-    CalendarPlus
-} from 'lucide-react';
+// Import your dashboard and other view components
+import OwnerDashboard from '@/components/pages/OwnerDashboard';
+import BookingsView from '@/components/pages/BookingsView';
+import CreateBookingView from '@/components/pages/CreateBookingView';
+
+// Mock components for other views - replace with your actual components
+
+const InstructorsView = ({ onNavigate, formatNumber }) => (
+    <div className="flex flex-1 flex-col gap-6 p-4 pt-0">
+        <h2 className="text-2xl font-bold">All Instructors</h2>
+        <p className="text-muted-foreground">Instructor management will be implemented here.</p>
+        <div className="text-center p-8">
+            <p>This view will show all your driving instructors.</p>
+            <Button className="mt-4" onClick={() => onNavigate('dashboard')}>Back to Dashboard</Button>
+        </div>
+    </div>
+);
+
+const StudentsView = ({ onNavigate, formatNumber }) => (
+    <div className="flex flex-1 flex-col gap-6 p-4 pt-0">
+        <h2 className="text-2xl font-bold">All Students</h2>
+        <p className="text-muted-foreground">Student management will be implemented here.</p>
+        <div className="text-center p-8">
+            <p>This view will show all your students and their progress.</p>
+            <Button className="mt-4" onClick={() => onNavigate('dashboard')}>Back to Dashboard</Button>
+        </div>
+    </div>
+);
+
+const VehiclesView = ({ onNavigate, formatNumber }) => (
+    <div className="flex flex-1 flex-col gap-6 p-4 pt-0">
+        <h2 className="text-2xl font-bold">Fleet Management</h2>
+        <p className="text-muted-foreground">Vehicle management will be implemented here.</p>
+        <div className="text-center p-8">
+            <p>This view will show your vehicle fleet and maintenance schedules.</p>
+            <Button className="mt-4" onClick={() => onNavigate('dashboard')}>Back to Dashboard</Button>
+        </div>
+    </div>
+);
+
+const ReportsView = ({ onNavigate, formatNumber, formatCurrency }) => (
+    <div className="flex flex-1 flex-col gap-6 p-4 pt-0">
+        <h2 className="text-2xl font-bold">Reports & Analytics</h2>
+        <p className="text-muted-foreground">Business reports and analytics will be implemented here.</p>
+        <div className="text-center p-8">
+            <p>This view will show detailed business reports and analytics.</p>
+            <Button className="mt-4" onClick={() => onNavigate('dashboard')}>Back to Dashboard</Button>
+        </div>
+    </div>
+);
+
+const FinanceView = ({ onNavigate, formatNumber, formatCurrency }) => (
+    <div className="flex flex-1 flex-col gap-6 p-4 pt-0">
+        <h2 className="text-2xl font-bold">Finance Management</h2>
+        <p className="text-muted-foreground">Financial management will be implemented here.</p>
+        <div className="text-center p-8">
+            <p>This view will show payments, invoices, and expenses.</p>
+            <Button className="mt-4" onClick={() => onNavigate('dashboard')}>Back to Dashboard</Button>
+        </div>
+    </div>
+);
+
+const SettingsView = ({ onNavigate, auth }) => (
+    <div className="flex flex-1 flex-col gap-6 p-4 pt-0">
+        <h2 className="text-2xl font-bold">School Settings</h2>
+        <p className="text-muted-foreground">School configuration and settings will be implemented here.</p>
+        <div className="text-center p-8">
+            <p>This view will show school settings and configuration options.</p>
+            <Button className="mt-4" onClick={() => onNavigate('dashboard')}>Back to Dashboard</Button>
+        </div>
+    </div>
+);
 
 export default function Page() {
     const router = useRouter();
     const auth = useAuth();
+    const [schoolStats, setSchoolStats] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [currentTime, setCurrentTime] = useState(new Date());
+    const [currentView, setCurrentView] = useState('dashboard'); // Track current view
 
+    // Helper functions for formatting
+    const formatCurrency = (val) => {
+        if (val === null || val === undefined || isNaN(val)) return 'R0';
+        return `R${new Intl.NumberFormat("en-ZA").format(val)}`;
+    };
+
+    const formatNumber = (val) => {
+        if (val === null || val === undefined || isNaN(val)) return '0';
+        return new Intl.NumberFormat("en-ZA").format(val);
+    };
+
+    const formatTime = (date) => {
+        return date.toLocaleTimeString('en-ZA', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        });
+    };
+
+    const formatDate = (date) => {
+        return date.toLocaleDateString('en-ZA', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    };
+
+    // Navigation handler - this will be called from sidebar
+    const handleNavigation = (view) => {
+        console.log('🔥 Navigation called with view:', view);
+        setCurrentView(view);
+        console.log('🔥 Current view set to:', view);
+    };
+
+    // Update time every minute
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setCurrentTime(new Date());
+        }, 60000);
+        return () => clearInterval(timer);
+    }, []);
 
     useEffect(() => {
-        console.log('OwnerDashboard - auth.loading:', auth.loading);
-        console.log('OwnerDashboard - auth.isAuthenticated:', auth.isAuthenticated);
-        console.log('OwnerDashboard - auth.user:', auth.user);
-        console.log('OwnerDashboard - auth.error:', auth.error);
-
-        // Wait for SWR to finish loading
-        if (auth.loading) {
-            console.log('Auth still loading...');
-            return;
-        }
-
-        // If there's an error or not authenticated, redirect
+        if (!auth) return;
+        if (auth.loading) return;
         if (auth.error || !auth.isAuthenticated || !auth.user) {
-            console.log('Not authenticated or error, redirecting to login');
             router.replace('/auth/login');
             return;
         }
-
-        // Check if user is an owner
         if (auth.user.role !== 'owner' && !auth.user.is_owner) {
-            console.log('User is not an owner, redirecting to login');
             router.replace('/auth/login');
             return;
         }
 
-        console.log('All checks passed - dashboard ready');
-    }, [auth.loading, auth.isAuthenticated, auth.user, auth.error, router]);
+        setLoading(true);
+        const fetchStats = async () => {
+            try {
+                const response = await fetch('/api/stats', { headers: { 'Content-Type': 'application/json' } });
+                const data = await response.json();
+                if (response.ok) {
+                    setSchoolStats(data);
+                }
+            } catch (err) {
+                console.error('Error fetching stats:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchStats();
+    }, [auth, router]);
 
-    // Show loading while SWR is fetching
-    if (auth.loading) {
+    const refreshData = async () => {
+        setLoading(true);
+        try {
+            const response = await fetch('/api/stats', { headers: { 'Content-Type': 'application/json' } });
+            const data = await response.json();
+            if (response.ok) {
+                setSchoolStats(data);
+            }
+        } catch (err) {
+            console.error('Error refreshing stats:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Show loading while fetching
+    if (auth.loading || loading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
                 <div className="text-center">
@@ -83,7 +190,7 @@ export default function Page() {
     }
 
     // Show error state
-    if (auth.error || !auth.isAuthenticated || !auth.user && !isLoading) {
+    if (auth.error || !auth.isAuthenticated || !auth.user) {
         return (
             <div className="flex items-center justify-center min-h-screen">
                 <div className="text-center">
@@ -98,291 +205,57 @@ export default function Page() {
         );
     }
 
+    // Render different views based on currentView state
+    const renderCurrentView = () => {
+        const commonProps = {
+            onNavigate: handleNavigation,
+            formatNumber,
+            formatCurrency,
+            useAuth: useAuth
+        };
+
+        switch (currentView) {
+            case 'bookings':
+                return <BookingsView {...commonProps} />;
+            case 'create-booking':
+                return <CreateBookingView {...commonProps} />;
+            case 'instructors':
+                return <InstructorsView {...commonProps} />;
+            case 'students':
+                return <StudentsView {...commonProps} />;
+            case 'vehicles':
+                return <VehiclesView {...commonProps} />;
+            case 'reports':
+                return <ReportsView {...commonProps} />;
+            case 'finance':
+                return <FinanceView {...commonProps} />;
+            case 'settings':
+                return <SettingsView {...commonProps} auth={auth} />;
+            case 'dashboard':
+            default:
+                return (
+                    <OwnerDashboard
+                        schoolStats={schoolStats}
+                        loading={loading}
+                        auth={auth}
+                        currentTime={currentTime}
+                        formatDate={formatDate}
+                        formatTime={formatTime}
+                        formatCurrency={formatCurrency}
+                        formatNumber={formatNumber}
+                        refreshData={refreshData}
+                        onNavigate={handleNavigation}
+                    />
+                );
+        }
+    };
+
     return (
         <SidebarProvider className="pt-[15vh] px-2 bg-white dark:bg-gray-900">
-            <AppSidebar />
+            {/* Pass navigation handler to sidebar */}
+            <AppSidebar onNavigate={handleNavigation} currentView={currentView} />
             <SidebarInset>
-                <header className="flex flex-col px-4 pb-6  md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-                    <div>
-                        <h1 className="text-3xl font-bold">
-                            Welcome back, {auth.user?.first_name}
-                        </h1>
-                        <p className="text-muted-foreground">
-                            Manage your driving school operations
-                        </p>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <Badge variant={auth.user?.approval_status === 'approved' ? 'default' : 'secondary'}>
-                            {auth.user?.approval_status.charAt(0).toUpperCase() + auth.user?.approval_status.slice(1)}
-                        </Badge>
-                        <Button>
-                            <CalendarPlus className="h-4 w-4 mr-2" />
-                            Create Booking
-                        </Button>
-                    </div>
-                </header>
-
-                <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-                    {/* Quick Stats */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                        <Card>
-                            <CardContent className="p-6">
-                                <div className="flex items-center space-x-2">
-                                    <div className="p-2 bg-blue-100 rounded-lg">
-                                        <Calendar className="h-6 w-6 text-blue-600" />
-                                    </div>
-                                    <div>
-                                        <p className="text-2xl font-bold">24</p>
-                                        <p className="text-sm text-muted-foreground">Today's Lessons</p>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardContent className="p-6">
-                                <div className="flex items-center space-x-2">
-                                    <div className="p-2 bg-green-100 rounded-lg">
-                                        <Users className="h-6 w-6 text-green-600" />
-                                    </div>
-                                    <div>
-                                        <p className="text-2xl font-bold">8</p>
-                                        <p className="text-sm text-muted-foreground">Active Instructors</p>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardContent className="p-6">
-                                <div className="flex items-center space-x-2">
-                                    <div className="p-2 bg-purple-100 rounded-lg">
-                                        <Car className="h-6 w-6 text-purple-600" />
-                                    </div>
-                                    <div>
-                                        <p className="text-2xl font-bold">12</p>
-                                        <p className="text-sm text-muted-foreground">Vehicles</p>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardContent className="p-6">
-                                <div className="flex items-center space-x-2">
-                                    <div className="p-2 bg-orange-100 rounded-lg">
-                                        <DollarSign className="h-6 w-6 text-orange-600" />
-                                    </div>
-                                    <div>
-                                        <p className="text-2xl font-bold">R15,420</p>
-                                        <p className="text-sm text-muted-foreground">This Month</p>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
-
-                    {/* Main Management Actions */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {/* Booking Management */}
-                        <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                            <CardHeader>
-                                <CardTitle className="flex items-center space-x-2">
-                                    <Calendar className="h-5 w-5 text-blue-600" />
-                                    <span>Booking Management</span>
-                                </CardTitle>
-                                <CardDescription>Create and manage lesson bookings</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
-                                <Button className="w-full" size="sm">
-                                    <Plus className="h-4 w-4 mr-2" />
-                                    Create New Booking
-                                </Button>
-                                <Button variant="outline" className="w-full" size="sm">
-                                    <Eye className="h-4 w-4 mr-2" />
-                                    View All Bookings
-                                </Button>
-                            </CardContent>
-                        </Card>
-
-                        {/* Instructor Management */}
-                        <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                            <CardHeader>
-                                <CardTitle className="flex items-center space-x-2">
-                                    <Users className="h-5 w-5 text-green-600" />
-                                    <span>Instructor Management</span>
-                                </CardTitle>
-                                <CardDescription>Manage your driving instructors</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
-                                <Button className="w-full" size="sm">
-                                    <UserPlus className="h-4 w-4 mr-2" />
-                                    Add Instructor
-                                </Button>
-                                <Button variant="outline" className="w-full" size="sm">
-                                    <Eye className="h-4 w-4 mr-2" />
-                                    View Instructors
-                                </Button>
-                            </CardContent>
-                        </Card>
-
-                        {/* Vehicle Management */}
-                        <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                            <CardHeader>
-                                <CardTitle className="flex items-center space-x-2">
-                                    <Car className="h-5 w-5 text-purple-600" />
-                                    <span>Vehicle Management</span>
-                                </CardTitle>
-                                <CardDescription>Manage your fleet of vehicles</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
-                                <Button className="w-full" size="sm">
-                                    <Plus className="h-4 w-4 mr-2" />
-                                    Add Vehicle
-                                </Button>
-                                <Button variant="outline" className="w-full" size="sm">
-                                    <Eye className="h-4 w-4 mr-2" />
-                                    View Fleet
-                                </Button>
-                            </CardContent>
-                        </Card>
-
-                        {/* Schedule Overview */}
-                        <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                            <CardHeader>
-                                <CardTitle className="flex items-center space-x-2">
-                                    <Clock className="h-5 w-5 text-orange-600" />
-                                    <span>Schedule Overview</span>
-                                </CardTitle>
-                                <CardDescription>View and manage schedules</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
-                                <Button className="w-full" size="sm">
-                                    <Calendar className="h-4 w-4 mr-2" />
-                                    Today's Schedule
-                                </Button>
-                                <Button variant="outline" className="w-full" size="sm">
-                                    <Eye className="h-4 w-4 mr-2" />
-                                    Weekly View
-                                </Button>
-                            </CardContent>
-                        </Card>
-
-                        {/* Reports & Analytics */}
-                        <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                            <CardHeader>
-                                <CardTitle className="flex items-center space-x-2">
-                                    <BarChart3 className="h-5 w-5 text-blue-600" />
-                                    <span>Reports & Analytics</span>
-                                </CardTitle>
-                                <CardDescription>View business insights</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
-                                <Button className="w-full" size="sm">
-                                    <BarChart3 className="h-4 w-4 mr-2" />
-                                    Revenue Report
-                                </Button>
-                                <Button variant="outline" className="w-full" size="sm">
-                                    <Eye className="h-4 w-4 mr-2" />
-                                    All Reports
-                                </Button>
-                            </CardContent>
-                        </Card>
-
-                        {/* School Settings */}
-                        <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                            <CardHeader>
-                                <CardTitle className="flex items-center space-x-2">
-                                    <Settings className="h-5 w-5 text-gray-600" />
-                                    <span>School Settings</span>
-                                </CardTitle>
-                                <CardDescription>Configure your driving school</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
-                                <Button className="w-full" size="sm">
-                                    <Settings className="h-4 w-4 mr-2" />
-                                    General Settings
-                                </Button>
-                                <Button variant="outline" className="w-full" size="sm">
-                                    <Eye className="h-4 w-4 mr-2" />
-                                    View Profile
-                                </Button>
-                            </CardContent>
-                        </Card>
-                    </div>
-
-                    {/* Recent Activity */}
-                    <div>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Recent Activity</CardTitle>
-                                <CardDescription>Latest updates from your driving school</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-4">
-                                    <div className="flex items-center space-x-3 p-3 bg-green-50 rounded-lg">
-                                        <div className="p-1 bg-green-100 rounded-full">
-                                            <Calendar className="h-4 w-4 text-green-600" />
-                                        </div>
-                                        <div className="flex-1">
-                                            <p className="text-sm font-medium">New booking created</p>
-                                            <p className="text-xs text-muted-foreground">John Smith booked a lesson for tomorrow at 10:00 AM</p>
-                                        </div>
-                                        <span className="text-xs text-muted-foreground">2 min ago</span>
-                                    </div>
-
-                                    <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg">
-                                        <div className="p-1 bg-blue-100 rounded-full">
-                                            <Users className="h-4 w-4 text-blue-600" />
-                                        </div>
-                                        <div className="flex-1">
-                                            <p className="text-sm font-medium">Instructor completed lesson</p>
-                                            <p className="text-xs text-muted-foreground">Sarah completed lesson with Mary Johnson</p>
-                                        </div>
-                                        <span className="text-xs text-muted-foreground">15 min ago</span>
-                                    </div>
-
-                                    <div className="flex items-center space-x-3 p-3 bg-purple-50 rounded-lg">
-                                        <div className="p-1 bg-purple-100 rounded-full">
-                                            <Car className="h-4 w-4 text-purple-600" />
-                                        </div>
-                                        <div className="flex-1">
-                                            <p className="text-sm font-medium">Vehicle maintenance reminder</p>
-                                            <p className="text-xs text-muted-foreground">Honda Civic (ABC-123) due for service in 3 days</p>
-                                        </div>
-                                        <span className="text-xs text-muted-foreground">1 hour ago</span>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        {/* Debug Info - Remove in production */}
-                        <Card className="border-yellow-200 bg-yellow-50">
-                            <CardHeader>
-                                <CardTitle className="text-yellow-800">Debug Info (Remove in production)</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <pre className="text-xs text-yellow-700 overflow-auto">
-                                    {JSON.stringify({
-                                        loading: auth.loading,
-                                        isAuthenticated: auth.isAuthenticated,
-                                        userRole: auth.user?.role,
-                                        error: auth.error
-                                    }, null, 2)}
-                                </pre>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => auth.mutate()}
-                                    className="mt-2"
-                                >
-                                    Refresh User Data
-                                </Button>
-                            </CardContent>
-                        </Card>
-                    </div>
-                    {/* <div className="bg-muted/50 min-h-[100vh] flex-1 rounded-xl md:min-h-min" /> */}
-                </div>
+                {renderCurrentView()}
             </SidebarInset>
         </SidebarProvider>
     )

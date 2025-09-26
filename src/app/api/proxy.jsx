@@ -3,6 +3,20 @@ import { getToken } from '@/lib/auth'
 
 export default class ApiProxy {
 
+    static async handleFetch(endpoint, requestOptions) {
+        let data = {}
+        let status = 500
+        try {
+            const response = await fetch(endpoint, requestOptions);
+            data = await response.json()
+            status = response.status
+        } catch (error) {
+            data = { message: "Unable to reach API server", error: error }
+            status = 500
+        }
+        return { data, status }
+    }
+
     static async getHeaders(requireAuth) {
         let headers = {
             'Content-Type': 'application/json',
@@ -28,9 +42,8 @@ export default class ApiProxy {
             body: JSON.stringify(object),
         }
 
-        const response = await fetch(endpoint, requestOptions);
+        return await this.handleFetch(endpoint, requestOptions);
 
-        return response;
 
     }
 
@@ -46,9 +59,7 @@ export default class ApiProxy {
             credentials: 'include',
         }
 
-        const response = await fetch(endpoint, requestOptions);
-
-        return response;
+        return await this.handleFetch(endpoint, requestOptions);
 
     }
 }
