@@ -1,5 +1,5 @@
-// hooks/useInstructors.js
 import { useState, useCallback } from "react";
+import { formatLocalDateTime } from "@/lib/formatLocalDateTime"
 
 export function useInstructors() {
     const [instructors, setInstructors] = useState([]);
@@ -14,24 +14,7 @@ export function useInstructors() {
             const startDateTimeString = `${scheduleData.date}T${scheduleData.startTime}:00`;
             const startDateTime = new Date(startDateTimeString);
             const endDateTime = new Date(startDateTime.getTime() + (scheduleData.durationMinutes * 60000));
-
-            // Format as ISO string but keep local timezone
-            const formatLocalDateTime = (date) => {
-                const year = date.getFullYear();
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const day = String(date.getDate()).padStart(2, '0');
-                const hours = String(date.getHours()).padStart(2, '0');
-                const minutes = String(date.getMinutes()).padStart(2, '0');
-                const seconds = String(date.getSeconds()).padStart(2, '0');
-
-                const offsetMinutes = date.getTimezoneOffset();
-                const offsetHours = Math.floor(Math.abs(offsetMinutes) / 60);
-                const offsetMins = Math.abs(offsetMinutes) % 60;
-                const offsetSign = offsetMinutes <= 0 ? '+' : '-';
-                const offsetString = `${offsetSign}${String(offsetHours).padStart(2, '0')}:${String(offsetMins).padStart(2, '0')}`;
-
-                return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${offsetString}`;
-            };
+            
 
             const params = new URLSearchParams({
                 start: formatLocalDateTime(startDateTime),

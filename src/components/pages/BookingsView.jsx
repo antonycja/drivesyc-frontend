@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from '@/components/auth/utils/authProvider';
+import { formatLocalDateTime } from '@/lib/formatLocalDateTime'; // Import the utility
 
 import {
     Card,
@@ -74,6 +75,19 @@ export default function BookingsView({
         });
     };
 
+    // Convert UTC datetime string to local Date object
+    const convertUTCToLocal = (utcDateString) => {
+        if (!utcDateString) return null;
+        try {
+            // If the datetime string doesn't end with 'Z', assume it's UTC and add it
+            const utcString = utcDateString.endsWith('Z') ? utcDateString : utcDateString + 'Z';
+            return new Date(utcString);
+        } catch (error) {
+            console.error('Error converting UTC to local:', error);
+            return null;
+        }
+    };
+
     const fetchBookings = async (isRefresh = false) => {
         if (isRefresh) {
             setRefreshing(true);
@@ -92,16 +106,25 @@ export default function BookingsView({
                     ? data
                     : data?.bookings || [];
 
+                // Convert UTC dates to local dates for each booking
+                const bookingsWithLocalDates = bookingsArray.map(booking => ({
+                    ...booking,
+                    // Convert scheduled times to local
+                    scheduled_start_local: convertUTCToLocal(booking.scheduled_start),
+                    scheduled_end_local: convertUTCToLocal(booking.scheduled_end),
+                    created_at_local: convertUTCToLocal(booking.created_at)
+                }));
+
                 const now = new Date();
 
-                // Separate upcoming and past bookings
-                const upcoming = bookingsArray
-                    .filter(b => new Date(b.scheduled_start) >= now)
-                    .sort((a, b) => new Date(a.scheduled_start) - new Date(b.scheduled_start));
+                // Separate upcoming and past bookings using local dates
+                const upcoming = bookingsWithLocalDates
+                    .filter(b => b.scheduled_start_local && b.scheduled_start_local >= now)
+                    .sort((a, b) => a.scheduled_start_local - b.scheduled_start_local);
 
-                const past = bookingsArray
-                    .filter(b => new Date(b.scheduled_start) < now)
-                    .sort((a, b) => new Date(b.scheduled_start) - new Date(a.scheduled_start));
+                const past = bookingsWithLocalDates
+                    .filter(b => b.scheduled_start_local && b.scheduled_start_local < now)
+                    .sort((a, b) => b.scheduled_start_local - a.scheduled_start_local);
 
                 // Combine upcoming first, then past
                 const sorted = [...upcoming, ...past];
@@ -162,28 +185,28 @@ export default function BookingsView({
             (pickupFilter === "pickup_required" && booking.is_pickup_required) ||
             (pickupFilter === "no_pickup" && !booking.is_pickup_required);
 
-        // Time filtering
+        // Time filtering using local dates
         const now = new Date();
-        const bookingDate = new Date(booking.scheduled_start);
+        const bookingDate = booking.scheduled_start_local;
 
         let matchesTime = true;
         if (timeFilter === "upcoming") {
-            matchesTime = bookingDate >= now;
+            matchesTime = bookingDate && bookingDate >= now;
         } else if (timeFilter === "past") {
-            matchesTime = bookingDate < now;
+            matchesTime = bookingDate && bookingDate < now;
         } else if (timeFilter === "today") {
             const today = new Date();
             today.setHours(0, 0, 0, 0);
             const tomorrow = new Date(today);
             tomorrow.setDate(tomorrow.getDate() + 1);
-            matchesTime = bookingDate >= today && bookingDate < tomorrow;
+            matchesTime = bookingDate && bookingDate >= today && bookingDate < tomorrow;
         } else if (timeFilter === "this_week") {
             const startOfWeek = new Date(now);
             startOfWeek.setDate(now.getDate() - now.getDay());
             startOfWeek.setHours(0, 0, 0, 0);
             const endOfWeek = new Date(startOfWeek);
             endOfWeek.setDate(startOfWeek.getDate() + 7);
-            matchesTime = bookingDate >= startOfWeek && bookingDate < endOfWeek;
+            matchesTime = bookingDate && bookingDate >= startOfWeek && bookingDate < endOfWeek;
         }
 
         return matchesSearch && matchesStatus && matchesTime && matchesTransmission &&
@@ -200,10 +223,9 @@ export default function BookingsView({
         return variants[status] || "outline";
     };
 
-    const getRelativeDate = (iso) => {
-        if (!iso) return "-";
+    const getRelativeDate = (dateObj) => {
+        if (!dateObj || !(dateObj instanceof Date)) return "-";
         try {
-            const date = new Date(iso);
             const today = new Date();
             const tomorrow = new Date(today);
             tomorrow.setDate(today.getDate() + 1);
@@ -211,7 +233,7 @@ export default function BookingsView({
             yesterday.setDate(today.getDate() - 1);
 
             // Reset times to compare dates only
-            const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+            const dateOnly = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
             const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
             const tomorrowOnly = new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate());
             const yesterdayOnly = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
@@ -223,7 +245,7 @@ export default function BookingsView({
             } else if (dateOnly.getTime() === yesterdayOnly.getTime()) {
                 return "Yesterday";
             } else {
-                return date.toLocaleDateString("en-ZA", {
+                return dateObj.toLocaleDateString("en-ZA", {
                     day: "2-digit",
                     month: "2-digit",
                     year: "numeric"
@@ -234,11 +256,10 @@ export default function BookingsView({
         }
     };
 
-    const formatTime = (iso) => {
-        if (!iso) return "-";
+    const formatTime = (dateObj) => {
+        if (!dateObj || !(dateObj instanceof Date)) return "-";
         try {
-            const date = new Date(iso);
-            return date.toLocaleTimeString("en-ZA", {
+            return dateObj.toLocaleTimeString("en-ZA", {
                 hour: "2-digit",
                 minute: "2-digit",
                 hour12: false
@@ -248,8 +269,9 @@ export default function BookingsView({
         }
     };
 
-    const isPast = (dateString) => {
-        return new Date(dateString) < new Date();
+    const isPast = (dateObj) => {
+        if (!dateObj || !(dateObj instanceof Date)) return false;
+        return dateObj < new Date();
     };
 
     const handleRefresh = () => {
@@ -446,7 +468,7 @@ export default function BookingsView({
                                             filteredBookings.map((booking) => (
                                                 <tr
                                                     key={booking.id}
-                                                    className={`border-b hover:bg-muted/50 transition-colors ${isPast(booking.scheduled_start) ? 'bg-gray-50 text-gray-600' : ''
+                                                    className={`border-b hover:bg-muted/50 transition-colors ${isPast(booking.scheduled_start_local) ? 'bg-gray-50 text-gray-600' : ''
                                                         }`}
                                                 >
                                                     <td className="p-4">
@@ -463,11 +485,11 @@ export default function BookingsView({
                                                     <td className="p-4">{booking.instructor_name || 'N/A'}</td>
                                                     <td className="p-4">
                                                         <div className="text-sm">
-                                                            <div className="font-medium">{getRelativeDate(booking.scheduled_start)}</div>
+                                                            <div className="font-medium">{getRelativeDate(booking.scheduled_start_local)}</div>
                                                             <div className="text-muted-foreground">
-                                                                {formatTime(booking.scheduled_start)}
-                                                                {booking.scheduled_end && (
-                                                                    <span> - {formatTime(booking.scheduled_end)}</span>
+                                                                {formatTime(booking.scheduled_start_local)}
+                                                                {booking.scheduled_end_local && (
+                                                                    <span> - {formatTime(booking.scheduled_end_local)}</span>
                                                                 )}
                                                             </div>
                                                         </div>
@@ -485,11 +507,11 @@ export default function BookingsView({
                                                     <td className="p-4">
                                                         <div className="text-sm">
                                                             <div className="font-medium">
-                                                                {new Date(booking.created_at).toLocaleDateString("en-ZA", {
+                                                                {booking.created_at_local ? booking.created_at_local.toLocaleDateString("en-ZA", {
                                                                     day: "2-digit",
                                                                     month: "2-digit",
                                                                     year: "2-digit"
-                                                                })}
+                                                                }) : 'N/A'}
                                                             </div>
                                                             <div className="text-muted-foreground text-xs">
                                                                 {booking.created_by_name || 'System'}

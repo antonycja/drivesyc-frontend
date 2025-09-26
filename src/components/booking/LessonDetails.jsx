@@ -86,7 +86,7 @@ export default function LessonDetails({
         if (is12Hour) {
             const timeRegex = /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i;
             if (!timeRegex.test(value)) {
-                return "Please use format: HH:MM AM/PM (e.g., 02:30 PM)";
+                return "Please use format: HH:MM AM/PM (e.g., 02:00 PM)";
             }
 
             const match = value.match(timeRegex);
@@ -103,7 +103,7 @@ export default function LessonDetails({
         } else {
             const timeRegex = /^([01]?[0-9]|2[0-3]):([0-5][0-9])$/;
             if (!timeRegex.test(value)) {
-                return "Please use format: HH:MM (e.g., 14:30)";
+                return "Please use format: HH:MM (e.g., 14:00)";
             }
         }
 
@@ -156,7 +156,7 @@ export default function LessonDetails({
     };
 
     const getTimeInputPlaceholder = () => {
-        return use12Hour ? "02:30 PM" : "14:30";
+        return use12Hour ? "02:00 PM" : "14:00";
     };
 
     const getQuickDateOptions = () => {
@@ -285,7 +285,7 @@ export default function LessonDetails({
                 {/* Date and Time Row */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-sm font-medium mb-2">
+                        <label className="block h-[2rem] content-center text-sm font-medium mb-2">
                             Lesson Date <span className="text-red-500">*</span>
                         </label>
                         <div className="relative">
@@ -395,8 +395,8 @@ export default function LessonDetails({
 
                         <p className="text-xs text-muted-foreground mt-1">
                             {use12Hour
-                                ? "Use 12-hour format with AM/PM (e.g., 02:30 PM)"
-                                : "Use 24-hour format (e.g., 14:30)"
+                                ? "Use 12-hour format with AM/PM (e.g., 02:00 PM)"
+                                : "Use 24-hour format (e.g., 14:00)"
                             }
                         </p>
                     </div>
