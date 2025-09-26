@@ -2,8 +2,8 @@ import { useState } from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { User } from "lucide-react";
-import RegisteredStudentSelector from "./RegisteredStudentSelector";
-import NewStudentForm from "./NewStudentForm";
+import RegisteredStudentSelector from "@/components/booking/create/RegisteredStudentSelector";
+import NewStudentForm from "@/components/booking/create/NewStudentForm";
 
 export default function StudentSelection({
     isUnregisteredLearner,

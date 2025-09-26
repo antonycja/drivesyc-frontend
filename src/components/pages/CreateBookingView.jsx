@@ -9,8 +9,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
 
 // Custom Components
-import BookingHeader from "@/components/booking/BookingHeader";
-import BookingForm from "@/components/booking/BookingForm";
+import BookingHeader from "@/components/booking/create/BookingHeader";
+import BookingForm from "@/components/booking/create/BookingForm";
 import LoadingSkeleton from "@/components/booking/LoadingSkeleton";
 
 // Custom Hooks

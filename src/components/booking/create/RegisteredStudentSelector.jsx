@@ -2,8 +2,8 @@ import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Plus } from "lucide-react";
-import StudentCombobox from "./StudentCombobox";
-import { SearchResultsInfo, SearchError, ValidationError } from "./SearchInfo";
+import StudentCombobox from "../StudentCombobox";
+import { SearchResultsInfo, SearchError, ValidationError } from "../SearchInfo";
 import { useStudentSearch } from "@/hooks/useStudentSearch";
 
 export default function RegisteredStudentSelector({

@@ -1,9 +1,9 @@
-import StudentSelection from "@/components/booking/StudentSelection";
-import LessonDetails from "@/components/booking/LessonDetails";
-import VehicleDetails from "@/components/booking/VehicleDetails";
-import LocationDetails from "@/components/booking/LocationDetails";
-import AdditionalNotes from "@/components/booking/AdditionalNotes";
-import BookingFormActions from "@/components/booking/BookingFormActions";
+import StudentSelection from "@/components/booking/create/StudentSelection";
+import LessonDetails from "@/components/booking/create/LessonDetails";
+import VehicleDetails from "@/components/booking/create/VehicleDetails";
+import LocationDetails from "@/components/booking/create/LocationDetails";
+import AdditionalNotes from "@/components/booking/create/AdditionalNotes";
+import BookingFormActions from "@/components/booking/create/BookingFormActions";
 
 export default function BookingForm({
     showStudentSelection,
