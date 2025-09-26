@@ -10,15 +10,15 @@ export default function RegisteredStudentSelector({
     formData,
     onInputChange,
     onLearnerTypeChange,
-    existingUser, // Add this prop to receive the existing user from parent
-    clearExistingUser, // Add this prop to clear the existing user
+    existingUser,
+    clearExistingUser,
     errors
 }) {
     const {
         searchQuery,
         setSearchQuery,
         searchResults,
-        setSearchResults, // Make sure this is destructured
+        setSearchResults,
         searching,
         searchError,
         triggerSearch
@@ -40,12 +40,11 @@ export default function RegisteredStudentSelector({
             // Set the learner ID first
             onInputChange('learner_id', existingUser.id);
 
-            // Use email for search instead of full name (avoids space issues)
-            const searchTerm = existingUser.email;
-            setSearchQuery(searchTerm);
+            // Use the full name for display in the search box
+            const displayName = `${existingUser.first_name} ${existingUser.last_name}`.trim();
+            setSearchQuery(displayName);
 
             // Pre-populate search results with the existing user
-            // This ensures the user appears in the dropdown immediately
             const userAsSearchResult = {
                 id: existingUser.id,
                 first_name: existingUser.first_name,
@@ -62,35 +61,77 @@ export default function RegisteredStudentSelector({
                 notes: existingUser.notes || ''
             };
 
-            // Set the search results immediately with this user
             if (setSearchResults) {
                 setSearchResults([userAsSearchResult]);
             }
 
             // Also trigger a proper search using email to get comprehensive results
-            triggerSearch(searchTerm);
+            triggerSearch(existingUser.email);
 
-            // Clear the existing user after processing to prevent re-triggering
+            // Clear the existing user after processing
             setTimeout(() => {
                 if (clearExistingUser) {
                     clearExistingUser();
                 }
             }, 100);
         }
-    }, [existingUser]); // Simplified dependencies - only watch existingUser
+    }, [existingUser]);
+
+    // Find the selected student to display their name in the search box
+    const selectedStudent = searchResults.find(student => student.id === formData.learner_id);
+
+    // Update search query when a student is selected (but only if it's different)
+    useEffect(() => {
+        if (selectedStudent && formData.learner_id) {
+            const displayName = `${selectedStudent.first_name} ${selectedStudent.last_name}`.trim();
+            // Only update if the current search query doesn't match the selected student's name
+            if (searchQuery !== displayName) {
+                console.log('Updating search query to selected student name:', displayName);
+                setSearchQuery(displayName);
+            }
+        }
+    }, [selectedStudent, formData.learner_id]);
 
     const handleSearch = (query) => {
         console.log('HandleSearch called with:', query);
         setSearchQuery(query);
+
+        // Clear the selected learner if user is typing something new
+        // Only clear if the query doesn't match the currently selected student's name
+        if (selectedStudent) {
+            const selectedDisplayName = `${selectedStudent.first_name} ${selectedStudent.last_name}`.trim();
+            if (query !== selectedDisplayName && formData.learner_id) {
+                console.log('Clearing selected learner due to search query change');
+                onInputChange('learner_id', null);
+            }
+        }
     };
 
     const handleStudentSelect = (studentId) => {
         console.log('Student selected:', studentId);
+
+        // Set the learner ID
         onInputChange('learner_id', studentId);
+
+        // Find the selected student and update the search query to show their full name
+        const student = searchResults.find(s => s.id === studentId);
+        if (student) {
+            const displayName = `${student.first_name} ${student.last_name}`.trim();
+            console.log('Setting search query to selected student name:', displayName);
+            setSearchQuery(displayName);
+        }
     };
 
     const handleAddNewStudent = () => {
         onLearnerTypeChange(true);
+    };
+
+    // Compute the display value for the combobox
+    const getDisplayValue = () => {
+        if (selectedStudent) {
+            return `${selectedStudent.first_name} ${selectedStudent.last_name}`.trim();
+        }
+        return searchQuery;
     };
 
     return (
@@ -109,7 +150,9 @@ export default function RegisteredStudentSelector({
                         placeholder="Search students by name, email, or phone..."
                         error={errors.learner_id}
                         onAddNew={handleAddNewStudent}
-                        // Pass the search query to help with pre-population
+                        // Pass the computed display value
+                        displayValue={getDisplayValue()}
+                        // Also pass the search query for internal use
                         initialQuery={searchQuery}
                     />
                 </div>
