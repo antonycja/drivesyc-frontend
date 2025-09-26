@@ -266,6 +266,13 @@ export default function LessonDetails({
         setTimeError("");
     };
 
+    // Reset instructor_id if no instructors are available
+    useEffect(() => {
+        if (instructors.length === 0 && formData.instructor_id) {
+            onInputChange('instructor_id', '');
+        }
+    }, [instructors.length]);
+
     return (
         <Card>
             <CardHeader>
@@ -441,11 +448,17 @@ export default function LessonDetails({
                             Instructor <span className="text-red-500">*</span>
                         </label>
                         <Select
-                            value={formData.instructor_id?.toString() || ''}
-                            onValueChange={(value) => onInputChange('instructor_id', value)}
+                            value={instructors.length === 0 ? "no-instructors" : formData.instructor_id?.toString() || ''}
+                            onValueChange={(value) => onInputChange('instructor_id', value !== "no-instructors" ? value : '')}
                             disabled={loadingInstructors}
                         >
-                            <SelectTrigger className={`${errors.instructor_id ? 'border-destructive' : ''} ${loadingInstructors ? 'opacity-50' : ''}`}>
+                            <SelectTrigger
+                                className={`
+                                    ${errors.instructor_id ? 'border-destructive' : ''} 
+                                    ${loadingInstructors ? 'opacity-50' : ''}
+                                    ${instructors.length === 0 ? 'text-muted-foreground' : ''}
+                                `}
+                            >
                                 <SelectValue
                                     placeholder={
                                         loadingInstructors
@@ -466,7 +479,7 @@ export default function LessonDetails({
                                     </SelectItem>
                                 ))}
                                 {instructors.length === 0 && !loadingInstructors && (
-                                    <SelectItem value="no-instructors" disabled>
+                                    <SelectItem value="no-instructors" disabled className="text-muted-foreground">
                                         No instructors available for this time slot
                                     </SelectItem>
                                 )}
