@@ -1,7 +1,7 @@
 'use server'
 
 import { NextResponse } from "next/server";
-import ApiProxy from '@/app/api/proxy'
+import { serverFetch } from '@/app/api/lib/serverFetch'
 
 // Base URL for your API
 const API_BASE = process.env.API_BASE_URL;
@@ -20,7 +20,7 @@ export async function GET(request) {
     }
 
     const API_URL = `${API_BASE}/api/v1/users/search?q=${encodeURIComponent(q)}&limit=${encodeURIComponent(limit)}`;
-    const { data, status } = await ApiProxy.get(API_URL, true);
+    const { data, status } = await serverFetch(API_URL);
 
     if (status !== 200) {
         return NextResponse.json({ error: "Failed to search users" }, { status: status });

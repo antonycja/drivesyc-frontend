@@ -1,7 +1,7 @@
 'use server'
 import { NextResponse } from "next/server";
 import { getTokenInfo, getToken } from '@/lib/auth'
-import ApiProxy from '@/app/api/proxy'
+import { serverFetch } from '@/app/api/lib/serverFetch'
 
 export async function GET(request) {
     const token = await getToken()
@@ -27,9 +27,9 @@ export async function GET(request) {
         }
 
         const API_STATS_URL = `${process.env.API_BASE_URL}/api/v1/schools/${schoolId}/stats/?include_canceled=${includeCanceled}`;
-        console.log('Fetching school stats:', { API_STATS_URL });
+        // console.log('Fetching school stats:', { API_STATS_URL });
 
-        const { data, status } = await ApiProxy.get(API_STATS_URL, true);
+        const { data, status } = await serverFetch(API_STATS_URL);
 
 
         if (status === 200) {

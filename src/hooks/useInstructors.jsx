@@ -1,5 +1,7 @@
 import { useState, useCallback } from "react";
 import { formatLocalDateTime } from "@/lib/formatLocalDateTime"
+import ApiProxy from '@/app/api/lib/proxy'
+
 
 export function useInstructors() {
     const [instructors, setInstructors] = useState([]);
@@ -8,36 +10,37 @@ export function useInstructors() {
     const fetchAvailableInstructors = useCallback(async (scheduleData, currentInstructorId) => {
         try {
             setLoadingInstructors(true);
-            console.log('Fetching available instructors for:', scheduleData);
+            // console.log('Fetching available instructors for:', scheduleData);
 
             // Create datetime strings without timezone conversion
             const startDateTimeString = `${scheduleData.date}T${scheduleData.startTime}:00`;
             const startDateTime = new Date(startDateTimeString);
             const endDateTime = new Date(startDateTime.getTime() + (scheduleData.durationMinutes * 60000));
-            
+
 
             const params = new URLSearchParams({
                 start: formatLocalDateTime(startDateTime),
                 end: formatLocalDateTime(endDateTime)
             });
 
-            console.log('API call params:', {
-                start: formatLocalDateTime(startDateTime),
-                end: formatLocalDateTime(endDateTime),
-                originalTime: scheduleData.startTime
-            });
+            // console.log('API call params:', {
+            //     start: formatLocalDateTime(startDateTime),
+            //     end: formatLocalDateTime(endDateTime),
+            //     originalTime: scheduleData.startTime
+            // });
 
-            const response = await fetch(`/api/users/instructors/available?${params}`);
+            const { data, status } = await ApiProxy.get(`/api/users/instructors/available?${params}`);
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error('Error fetching available instructors:', errorText);
+            console.log("Status: ", status)
+            console.log("Data: ", data)
+
+            if (status != 200 && status != 201) {
+                console.error('Error fetching available instructors:', data);
                 return;
             }
 
-            const data = await response.json();
             const instructorsArray = Array.isArray(data) ? data : [];
-            console.log('Available instructors:', instructorsArray);
+            // console.log('Available instructors:', instructorsArray);
 
             // Transform the API response to match expected format
             const formattedInstructors = instructorsArray.map(instructor => ({

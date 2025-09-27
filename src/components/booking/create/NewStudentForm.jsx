@@ -64,7 +64,7 @@ export default function NewStudentForm({
                                         size="sm"
                                         variant="outline"
                                         className="border-orange-300 text-orange-700 hover:bg-orange-100 dark:border-orange-600 dark:text-orange-300 dark:hover:bg-orange-900"
-                                        onClick={() => console.log('View user profile:', existingUser.id)}
+                                        // onClick={() => console.log('View user profile:', existingUser.id)}
                                     >
                                         <Eye className="h-3 w-3 mr-1" />
                                         View Profile

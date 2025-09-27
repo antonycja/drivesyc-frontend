@@ -25,17 +25,17 @@ export default function RegisteredStudentSelector({
     } = useStudentSearch();
 
     // Debug logging
-    console.log('RegisteredStudentSelector render:', {
-        existingUser,
-        'formData.learner_id': formData.learner_id,
-        searchQuery,
-        searchResults: searchResults.length
-    });
+    // console.log('RegisteredStudentSelector render:', {
+    //     existingUser,
+    //     'formData.learner_id': formData.learner_id,
+    //     searchQuery,
+    //     searchResults: searchResults.length
+    // });
 
     // Handle pre-selected user from the "Select This User" flow
     useEffect(() => {
         if (existingUser) {
-            console.log('Pre-selecting existing user:', existingUser);
+            // console.log('Pre-selecting existing user:', existingUser);
 
             // Set the learner ID first
             onInputChange('learner_id', existingUser.id);
@@ -86,14 +86,14 @@ export default function RegisteredStudentSelector({
             const displayName = `${selectedStudent.first_name} ${selectedStudent.last_name}`.trim();
             // Only update if the current search query doesn't match the selected student's name
             if (searchQuery !== displayName) {
-                console.log('Updating search query to selected student name:', displayName);
+                // console.log('Updating search query to selected student name:', displayName);
                 setSearchQuery(displayName);
             }
         }
     }, [selectedStudent, formData.learner_id]);
 
     const handleSearch = (query) => {
-        console.log('HandleSearch called with:', query);
+        // console.log('HandleSearch called with:', query);
         setSearchQuery(query);
 
         // Clear the selected learner if user is typing something new
@@ -101,14 +101,14 @@ export default function RegisteredStudentSelector({
         if (selectedStudent) {
             const selectedDisplayName = `${selectedStudent.first_name} ${selectedStudent.last_name}`.trim();
             if (query !== selectedDisplayName && formData.learner_id) {
-                console.log('Clearing selected learner due to search query change');
+                // console.log('Clearing selected learner due to search query change');
                 onInputChange('learner_id', null);
             }
         }
     };
 
     const handleStudentSelect = (studentId) => {
-        console.log('Student selected:', studentId);
+        // console.log('Student selected:', studentId);
 
         // Set the learner ID
         onInputChange('learner_id', studentId);
@@ -117,7 +117,7 @@ export default function RegisteredStudentSelector({
         const student = searchResults.find(s => s.id === studentId);
         if (student) {
             const displayName = `${student.first_name} ${student.last_name}`.trim();
-            console.log('Setting search query to selected student name:', displayName);
+            // console.log('Setting search query to selected student name:', displayName);
             setSearchQuery(displayName);
         }
     };

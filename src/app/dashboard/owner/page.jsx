@@ -4,10 +4,12 @@ import {
     SidebarInset,
     SidebarProvider,
 } from "@/components/ui/sidebar"
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/components/auth/utils/authProvider';
 import { use, useEffect, useState } from 'react';
+
+import ApiProxy from '@/app/api/lib/proxy'
 
 // Import your dashboard and other view components
 import OwnerDashboard from '@/components/pages/OwnerDashboard';
@@ -15,7 +17,6 @@ import BookingsView from '@/components/pages/BookingsView';
 import CreateBookingView from '@/components/pages/CreateBookingView';
 
 // Mock components for other views - replace with your actual components
-
 const InstructorsView = ({ onNavigate, formatNumber }) => (
     <div className="flex flex-1 flex-col gap-6 p-4 pt-0">
         <h2 className="text-2xl font-bold">All Instructors</h2>
@@ -84,11 +85,12 @@ const SettingsView = ({ onNavigate, auth }) => (
 
 export default function Page() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const auth = useAuth();
     const [schoolStats, setSchoolStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const [currentTime, setCurrentTime] = useState(new Date());
-    const [currentView, setCurrentView] = useState('dashboard'); // Track current view
+    const [currentView, setCurrentView] = useState('dashboard');
 
     // Helper functions for formatting
     const formatCurrency = (val) => {
@@ -118,10 +120,56 @@ export default function Page() {
         });
     };
 
-    // Navigation handler - this will be called from sidebar
+    // Initialize view from URL or localStorage
+    useEffect(() => {
+        // Check for view in URL params first
+        const viewParam = searchParams.get('view');
+        if (viewParam) {
+            setCurrentView(viewParam);
+            // Store in localStorage for persistence
+            localStorage.setItem('currentView', viewParam);
+            return;
+        }
+
+        // Check for hash-based view
+        if (typeof window !== 'undefined') {
+            const hash = window.location.hash.substring(1); // Remove #
+            if (hash) {
+                setCurrentView(hash);
+                localStorage.setItem('currentView', hash);
+                return;
+            }
+
+            // Fallback to localStorage
+            const storedView = localStorage.getItem('currentView');
+            if (storedView) {
+                setCurrentView(storedView);
+            }
+        }
+    }, [searchParams]);
+
+    // Navigation handler with state persistence
     const handleNavigation = (view) => {
         console.log('🔥 Navigation called with view:', view);
         setCurrentView(view);
+
+        // Persist view state in multiple ways
+        if (typeof window !== 'undefined') {
+            // Store in localStorage
+            localStorage.setItem('currentView', view);
+
+            // Update URL without causing a page reload
+            const newUrl = new URL(window.location);
+            if (view !== 'dashboard') {
+                newUrl.searchParams.set('view', view);
+            } else {
+                newUrl.searchParams.delete('view');
+            }
+
+            // Use replaceState to update URL without navigation
+            window.history.replaceState(null, '', newUrl.toString());
+        }
+
         console.log('🔥 Current view set to:', view);
     };
 
@@ -133,6 +181,7 @@ export default function Page() {
         return () => clearInterval(timer);
     }, []);
 
+    // Auth and data fetching logic
     useEffect(() => {
         if (!auth) return;
         if (auth.loading) return;
@@ -148,9 +197,8 @@ export default function Page() {
         setLoading(true);
         const fetchStats = async () => {
             try {
-                const response = await fetch('/api/stats', { headers: { 'Content-Type': 'application/json' } });
-                const data = await response.json();
-                if (response.ok) {
+                const { data, status } = await ApiProxy.get('/api/stats');
+                if (status === 200) {
                     setSchoolStats(data);
                 }
             } catch (err) {
@@ -165,9 +213,8 @@ export default function Page() {
     const refreshData = async () => {
         setLoading(true);
         try {
-            const response = await fetch('/api/stats', { headers: { 'Content-Type': 'application/json' } });
-            const data = await response.json();
-            if (response.ok) {
+            const { data, status } = await ApiProxy.get('/api/stats');
+            if (status === 200) {
                 setSchoolStats(data);
             }
         } catch (err) {
@@ -252,7 +299,6 @@ export default function Page() {
 
     return (
         <SidebarProvider className="pt-[15vh] px-2 bg-white dark:bg-gray-900">
-            {/* Pass navigation handler to sidebar */}
             <AppSidebar onNavigate={handleNavigation} currentView={currentView} />
             <SidebarInset>
                 {renderCurrentView()}

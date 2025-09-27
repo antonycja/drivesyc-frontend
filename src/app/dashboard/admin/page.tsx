@@ -2,6 +2,8 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import ApiProxy from '@/app/api/lib/proxy'
+
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -12,11 +14,9 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await fetch('/api/me', { headers: { 'Content-Type': 'application/json' } });
+        const { data, status } = await ApiProxy.get('/api/me', true);
         
-        const data = await response.json();
-
-        if (response.ok) {
+        if (status === 200) {
           if (data.role !== 'admin' && !data.is_admin) {
             router.replace('/auth/login');
           } else {
@@ -35,19 +35,17 @@ export default function AdminDashboard() {
 
     const fetchBookings = async () => {
       try {
-        const response = await fetch('/api/bookings', { headers: { 'Content-Type': 'application/json' } });
+        const { data, status } = await ApiProxy.get('/api/bookings', true );
         
-        const data = await response.json();
-
-        if (response.ok) {
+        if (status === 200) {
           setBookingsData(data)
-          console.log("DATA: ",data)
+          // console.log("DATA: ",data)
         } else {
-          console.log("Error with request")
+          // console.log("Error with request")
           // router.replace('/auth/login');
         }
       } catch (err) {
-        console.error('Error fetching user info:', err);
+        // console.error('Error fetching user info:', err);
         // router.replace('/auth/login');
       } finally {
         setLoading(false);

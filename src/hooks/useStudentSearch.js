@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
+import ApiProxy from '@/app/api/lib/proxy'
+
 
 export function useStudentSearch() {
     const [searchQuery, setSearchQuery] = useState('');
@@ -22,47 +24,28 @@ export function useStudentSearch() {
         setSearchError(null);
 
         try {
-            console.log('Searching for:', query.trim());
+            // console.log('Searching for:', query.trim());
 
             // Use your API route which internally uses ApiProxy
             const url = `/api/users/search?q=${encodeURIComponent(query.trim())}&limit=20`;
-            console.log('API URL:', url);
+            // console.log('API URL:', url);
 
-            const response = await fetch(url);
-            console.log('Response status:', response.status);
+            const { data, status } = await ApiProxy.get(url);
+            // console.log('Response status:', response.status);
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error('Error response text:', errorText);
-
-                let errorData = {};
-                try {
-                    errorData = JSON.parse(errorText);
-                } catch (parseError) {
-                    console.error('Could not parse error response as JSON:', parseError);
-                }
-
-                throw new Error(errorData.error || errorText || `Search failed: ${response.status}`);
+            if (status != 200) {
+                throw new Error(errorData.error || errorText || `Search failed: ${status}`);
             }
 
-            const responseText = await response.text();
-            console.log('Response text:', responseText);
+            console.log("Data: ", data)
 
-            let data = {};
-            try {
-                data = JSON.parse(responseText);
-                console.log('Parsed data:', data);
-            } catch (parseError) {
-                console.error('Could not parse response as JSON:', parseError);
-                throw new Error('Invalid response format from server');
-            }
 
             // Filter to only show users with role 'learner' 
             const learners = (data.users || []).filter(user =>
                 user.role === 'learner'
             );
 
-            console.log('Filtered learners:', learners);
+            // console.log('Filtered learners:', learners);
             setSearchResults(learners);
         } catch (err) {
             console.error('Error searching students:', err);

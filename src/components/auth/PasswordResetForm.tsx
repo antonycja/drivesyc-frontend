@@ -7,6 +7,7 @@ import { ErrorMessage } from './ErrorMessage';
 import { SuccessMessage } from './SuccessMessage';
 import { LoadingButton } from './LoadingButton';
 import { validateEmail } from './utils/validation';
+import ApiProxy from '@/app/api/lib/proxy';
 
 interface PasswordResetFormProps {
   onBackToLogin: () => void;
@@ -32,15 +33,13 @@ export function PasswordResetForm({ onBackToLogin, error, setError }: PasswordRe
     setResetSuccess('');
 
     try {
-      const response = await fetch('/api/auth/forgot-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const { data, status } = await ApiProxy.post('/api/auth/forgot-password', {
         body: JSON.stringify({ email: resetEmail.toLowerCase().trim() }),
-      });
+      }, false);
 
-      const result = await response.json();
+      const result = data
 
-      if (response.ok) {
+      if (status === 200) {
         setResetSuccess('Password reset instructions have been sent to your email.');
         setResetEmail('');
         setTimeout(() => onBackToLogin(), 3000);

@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/components/auth/utils/authProvider';
 import { useEffect, useState } from 'react';
 import { Progress } from '@/components/ui/progress';
+import ApiProxy from '@/app/api/lib/proxy'
 
 import {
   Users,
@@ -591,9 +592,8 @@ export default function Page() {
     setLoading(true);
     const fetchStats = async () => {
       try {
-        const response = await fetch('/api/stats', { headers: { 'Content-Type': 'application/json' } });
-        const data = await response.json();
-        if (response.ok) {
+        const { data, status } = await ApiProxy.get('/api/stats', true);
+        if (status === 200) {
           setSchoolStats(data);
         }
       } catch (err) {
@@ -608,9 +608,8 @@ export default function Page() {
   const refreshData = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/stats', { headers: { 'Content-Type': 'application/json' } });
-      const data = await response.json();
-      if (response.ok) {
+      const { data, status } = await ApiProxy.get('/api/stats', true);
+      if (status === 200) {
         setSchoolStats(data);
       }
     } catch (err) {

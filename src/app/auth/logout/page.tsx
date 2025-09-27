@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { LogOut, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/components/auth/utils/authProvider';
+import ApiProxy from '@/app/api/lib/proxy'
 
 export default function LogoutPage() {
   const auth = useAuth()
@@ -17,12 +18,9 @@ export default function LogoutPage() {
     setLogoutError('');
 
     try {
-      const response = await fetch('/api/logout', {
-        method: 'POST',
-        credentials: 'include',
-      });
+      const { data, status } = await ApiProxy.post('/api/logout', {}, true);
 
-      if (response.ok) {
+      if (status === 200) {
         setLogoutSuccess(true);
         auth.logout()
         
@@ -32,7 +30,7 @@ export default function LogoutPage() {
         }, 2000);
       } 
       else {
-        const result = await response.json();
+        const result = data
         setLogoutError(result.message || 'Failed to logout');
       }
     } catch (error) {

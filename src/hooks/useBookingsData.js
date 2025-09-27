@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
+import ApiProxy from '@/app/api/lib/proxy'
+
 
 export function useBookingsData({
     auth,
@@ -34,12 +36,9 @@ export function useBookingsData({
         }
 
         try {
-            const response = await fetch("/api/bookings", {
-                headers: { "Content-Type": "application/json" },
-            });
-            const data = await response.json();
+            const { data, status } = await ApiProxy.get("/api/bookings");
 
-            if (response.ok) {
+            if (status === 200) {
                 const bookingsArray = Array.isArray(data) ? data : data?.bookings || [];
 
                 const bookingsWithLocalDates = bookingsArray.map(booking => ({

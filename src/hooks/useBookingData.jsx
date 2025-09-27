@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
 import useCheckUserExists from "@/hooks/useCheckUserExists";
+import ApiProxy from '@/app/api/lib/proxy'
+
 
 export function useBookingData({ onBack, onNavigate, router, auth }) {
     const [submitting, setSubmitting] = useState(false);
@@ -232,21 +234,18 @@ export function useBookingData({ onBack, onNavigate, router, auth }) {
             const confirmExistingUser = isUnregisteredLearner && existingUser ? 'true' : 'false';
             const queryParams = new URLSearchParams({ confirm_existing_user: confirmExistingUser });
 
-            const response = await fetch(`/api/bookings?${queryParams}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(submissionData),
-            });
+            const { data, status } = await ApiProxy.post(`/api/bookings?${queryParams}`, {
+                ...submissionData,
+            }, true);
 
-            const result = await response.json();
-
-            if (!response.ok) {
+            const result = data
+            console.log("Status: ", status)
+            console.log("Data: ", data)
+            if (status !== 200 && status !== 201) {
                 throw new Error(result.message || 'Failed to create booking');
             }
 
-            console.log('Booking created successfully:', result);
+            // console.log('Booking created successfully:', result);
 
             if (onBack) {
                 onBack();

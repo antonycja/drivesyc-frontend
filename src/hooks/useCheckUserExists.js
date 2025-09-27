@@ -1,4 +1,6 @@
 import { useState, useCallback } from "react";
+import ApiProxy from '@/app/api/lib/proxy'
+
 
 export default function useCheckUserExists() {
     const [existingUser, setExistingUser] = useState(null);
@@ -62,11 +64,10 @@ export default function useCheckUserExists() {
             if (field === 'email') params.append('email', value.trim());
             if (field === 'phone') params.append('phone', value.replace(/[\s\+\-\(\)]/g, ''));
 
-            const res = await fetch(`/api/users/check-exists?${params.toString()}`);
-            const data = await res.json();
-            console.log("CHECK user: ", data);
+            const {data, status} = await ApiProxy.get(`/api/users/check-exists?${params.toString()}`, true);
+            // console.log("CHECK user: ", data);
 
-            if (res.ok) {
+            if (status === 200) {
                 setExistingUser(data.exists ? data.user : null);
             } else {
                 setExistingUser(null);

@@ -55,7 +55,7 @@ export default function CreateBookingView({ onNavigate, onBack }) {
 
     // Handle schedule changes from LessonDetails
     const handleScheduleChange = useCallback((scheduleData) => {
-        console.log('Schedule changed:', scheduleData);
+        // console.log('Schedule changed:', scheduleData);
         fetchAvailableInstructors(scheduleData, formData.instructor_id);
     }, [fetchAvailableInstructors, formData.instructor_id]);
 
@@ -79,7 +79,7 @@ export default function CreateBookingView({ onNavigate, onBack }) {
         }
 
         const currentUser = auth.user;
-        console.log('Current user from auth:', currentUser);
+        // console.log('Current user from auth:', currentUser);
         setUser(currentUser);
 
         // Auto-select learner for learner users

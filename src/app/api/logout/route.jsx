@@ -1,7 +1,7 @@
 'use server'
 import { NextResponse } from "next/server";
 import { deleteTokens } from '@/lib/auth'
-import ApiProxy from '@/app/api/proxy'
+import { serverFetch } from '@/app/api/lib/serverFetch'
 import { getToken } from '@/lib/auth'
 
 const API_LOGOUT_URL = `${process.env.API_BASE_URL}/api/v1/auth/logout`;
@@ -11,11 +11,15 @@ export async function POST(request) {
         const token = await getToken()
 
         if (token) {
-            const { data, status } = await ApiProxy.post(API_LOGOUT_URL, {}, true)
+            const { data, status } = await serverFetch(API_LOGOUT_URL, {
+                requireAuth: true,
+                method: 'POST',
+                body: {}
+            });
 
             if (status !== 200) {
                 // Log the error but continue with local cleanup
-                console.log('API logout failed with status:', status, data)
+                // console.log('API logout failed with status:', status, data)
             }
         }
 

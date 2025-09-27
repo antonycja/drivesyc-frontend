@@ -1,6 +1,8 @@
 'use client'
-import { ReactNode, createContext, useContext } from 'react'
+import { ReactNode, createContext, useContext, useCallback, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import useSWR from 'swr'
+import ApiProxy from '@/app/api/lib/proxy';
 
 interface User {
   name: string;
@@ -21,24 +23,19 @@ type AuthContextType = {
   error: any;
   login: (onSuccess?: (user: User) => void) => Promise<boolean>;
   logout: () => void;
-  mutate: () => void; // SWR's mutate function for manual revalidation
+  mutate: () => void;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-// SWR fetcher function
 const fetcher = async (url: string): Promise<User | null> => {
   console.log('Fetching user from:', url);
   
-  const response = await fetch(url, {
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' }
-  });
+  const { data, status } = await ApiProxy.get(url);
   
-  console.log('Response status:', response.status);
+  console.log('Response status:', status);
   
-  if (response.ok) {
-    const data = await response.json();
+  if (status === 200) {
     console.log('Response data:', data);
     
     return {
@@ -54,32 +51,48 @@ const fetcher = async (url: string): Promise<User | null> => {
     };
   }
   
-  if (response.status === 401) {
-    // Not authenticated - this is expected, not an error
+  if (status === 401) {
+    // console.log('Trying to refresh');
+    // const tried = await fetch('/api/refresh')
+
+    // console.log("Tried: ", tried.json())
     console.log('User not authenticated');
+
     return null;
   }
   
-  // For other errors, throw so SWR knows it's an error
-  throw new Error(`HTTP ${response.status}`);
+  throw new Error(`HTTP ${status}`);
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // Use SWR to fetch user data
+  const router = useRouter();
+  
   const { 
     data: user, 
     error, 
     isLoading: loading, 
     mutate 
   } = useSWR<User | null>('/api/me', fetcher, {
-    // SWR options
-    revalidateOnFocus: false, // Don't refetch when window regains focus
-    revalidateOnReconnect: true, // Refetch when internet connection is restored
-    shouldRetryOnError: (error) => {
-      // Don't retry on 401 (unauthorized) - user is just not logged in
-      return error.status !== 401;
-    },
-    dedupingInterval: 5000, // Dedupe requests within 5 seconds
+    revalidateOnFocus: false,
+    revalidateOnReconnect: true,
+    shouldRetryOnError: (error) => error.status !== 401,
+    dedupingInterval: 5000,
+    onError: (error) => {
+      // Handle auth errors globally
+      if (error.status === 401) {
+        console.log('Global auth error detected');
+        // Don't redirect if already on login page or public pages
+        if (typeof window !== 'undefined') {
+          const currentPath = window.location.pathname;
+          const publicPaths = ['/auth/login', '/auth/register', '/auth/forgot-password', '/'];
+          
+          if (!publicPaths.includes(currentPath)) {
+            const returnUrl = encodeURIComponent(currentPath + window.location.search);
+            router.push(`/auth/login?returnUrl=${returnUrl}`);
+          }
+        }
+      }
+    }
   });
 
   const isAuthenticated = !!user && !error;
@@ -87,7 +100,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (onSuccess?: (user: User) => void): Promise<boolean> => {
     console.log('Login called - triggering SWR revalidation');
     
-    // Revalidate the user data
     const updatedUser = await mutate();
     
     if (updatedUser) {
@@ -104,15 +116,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
-      await fetch('/api/logout', { 
-        method: 'POST',
-        credentials: 'include'
-      });
+      await ApiProxy.post('/api/logout', {});
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      // Clear the SWR cache and set user to null
       mutate(null, false);
+      router.push('/auth/login');
     }
   };
 

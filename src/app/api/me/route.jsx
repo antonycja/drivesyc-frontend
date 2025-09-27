@@ -1,19 +1,28 @@
 'use server'
 import { NextResponse } from "next/server";
-import ApiProxy from '@/app/api/proxy'
+import { getToken } from '@/lib/auth'; // Add this import
+import { serverFetch } from '@/app/api/lib/serverFetch'
 
+export async function GET() {
+    try {
+        const token = await getToken();
 
-const API_ME_URL = `${process.env.API_BASE_URL}/api/v1/auth/me`;
+        if (!token) {
+            return NextResponse.json({ error: 'No token found' }, { status: 401 });
+        }
 
-export async function GET(request) {
+        // Use serverFetch correctly - it returns {data, status}
+        const { data, status } = await serverFetch(`${process.env.API_BASE_URL}/api/v1/auth/me`);
 
-    const {data, status} = await ApiProxy.get(API_ME_URL, true)
+        if (status === 200) {
+            return NextResponse.json(data, { status: 200 });
+        }
 
+        // Return 401 so client-side can handle token refresh
+        return NextResponse.json({ error: 'Token expired or invalid' }, { status: 401 });
 
-    if (status !== 200) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    } catch (error) {
+        console.error('Get user error:', error);
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
-    return NextResponse.json({ ...data }, { status: status })
-
-
 }
