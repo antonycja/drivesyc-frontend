@@ -9,8 +9,8 @@ export default function LessonDetails({
     onInputChange,
     instructors,
     errors,
-    onScheduleChange, // Add this new prop
-    loadingInstructors // Add this new prop
+    onScheduleChange,
+    loadingInstructors
 }) {
     const [use12Hour, setUse12Hour] = useState(false);
     const [displayValue, setDisplayValue] = useState("");
@@ -163,9 +163,12 @@ export default function LessonDetails({
         const today = new Date();
         const options = [];
 
-        // Helper function to format date as YYYY-MM-DD
+        // FIXED: Helper function to format date as YYYY-MM-DD in local timezone
         const formatDate = (date) => {
-            return date.toISOString().split('T')[0];
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
         };
 
         // Helper function to get day name and formatted date
@@ -273,6 +276,15 @@ export default function LessonDetails({
         }
     }, [instructors.length]);
 
+    // FIXED: Get today's date in local timezone for min attribute
+    const getTodayForMinDate = () => {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
     return (
         <Card>
             <CardHeader>
@@ -296,7 +308,7 @@ export default function LessonDetails({
                                 onChange={(e) => onInputChange('scheduled_date', e.target.value)}
                                 className={`w-full pl-10 pr-3 py-2 border rounded-md bg-background ${errors.scheduled_date ? 'border-destructive' : 'border-input'
                                     }`}
-                                min={new Date().toISOString().split('T')[0]}
+                                min={getTodayForMinDate()}
                             />
                         </div>
 
