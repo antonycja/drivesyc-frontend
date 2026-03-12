@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import BaseLayout from "@/components/layout/baseLayout";
 import { AuthProvider } from "@/components/auth/utils/authProvider";
+import { TestProvider } from "@/context/TestContext";
 
 
 const geistSans = Geist({
@@ -32,9 +33,11 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
-          <BaseLayout className="flex min-h-[calc(100vh_-_theme(spacing.16))] flex-1 flex-col gap-4 bg-gradient-to-br from-background via-background to-accent/10 ">
-            {children}
-          </BaseLayout>
+          <TestProvider>
+            <BaseLayout className="flex min-h-[calc(100vh_-_theme(spacing.16))] flex-1 flex-col gap-4 bg-gradient-to-br from-background via-background to-accent/10 ">
+              {children}
+            </BaseLayout>
+          </TestProvider>
         </AuthProvider>
       </body>
     </html>

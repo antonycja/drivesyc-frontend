@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { useAuth } from "@/components/auth/utils/authProvider"
+import { useTestContext } from "@/context/TestContext"
 import NavLinks, { NonUserLinks } from './NavLinks'
 import BrandLink from "./BrandLink"
 import MobileNavbar from "./MobileNavbar"
@@ -9,6 +10,12 @@ import AccountDropdown from "./AccountDropdown"
 
 export default function Navbar({ className }) {
     const auth = useAuth()
+    const { isTestActive } = useTestContext()
+
+    const handleTestActiveClick = (e) => {
+        e.preventDefault()
+        alert("⚠️ Test in Progress\n\nYou cannot navigate away while taking a test. Please complete the test first.")
+    }
 
     const defaultClasses = "fixed top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/60 shadow-sm"
     const finalClass = className || defaultClasses
@@ -19,14 +26,38 @@ export default function Navbar({ className }) {
                 <div className="flex h-20 items-center justify-between">
                     {/* Desktop Navigation */}
                     <nav className="hidden md:flex md:items-center md:gap-8">
-                        <BrandLink displayName={true} />
+                        {isTestActive ? (
+                            <button
+                                onClick={handleTestActiveClick}
+                                className="flex items-center gap-2 text-lg font-bold opacity-50 cursor-not-allowed"
+                            >
+                                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                                    <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                    </svg>
+                                </div>
+                                <span className="bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
+                                    DriveSync
+                                </span>
+                            </button>
+                        ) : (
+                            <BrandLink displayName={true} />
+                        )}
 
                         {/* Navigation Links */}
                         <div className="flex items-center gap-6 lg:gap-8">
                             {NavLinks.map((navLinkItem, idx) => {
                                 const shouldHide = !auth.isAuthenticated && navLinkItem.authRequired
 
-                                return shouldHide ? null : (
+                                return shouldHide ? null : isTestActive ? (
+                                    <button
+                                        key={`desktop-nav-${idx}`}
+                                        onClick={handleTestActiveClick}
+                                        className="relative text-sm font-medium text-muted-foreground/50 cursor-not-allowed"
+                                    >
+                                        {navLinkItem.label}
+                                    </button>
+                                ) : (
                                     <Link
                                         href={navLinkItem.href}
                                         key={`desktop-nav-${idx}`}
@@ -42,7 +73,7 @@ export default function Navbar({ className }) {
 
                     {/* Mobile Navigation */}
                     <div className="flex md:hidden items-center gap-4">
-                        <MobileNavbar />
+                        <MobileNavbar isTestActive={isTestActive} />
                         <BrandLink displayName={true} />
                     </div>
 
@@ -71,7 +102,15 @@ export default function Navbar({ className }) {
                                     const shouldHide = !auth.isAuthenticated && navLinkItem.authRequired
                                     const isPrimary = navLinkItem.variant === 'primary'
 
-                                    return shouldHide ? null : (
+                                    return shouldHide ? null : isTestActive ? (
+                                        <button
+                                            key={`auth-link-${idx}`}
+                                            onClick={handleTestActiveClick}
+                                            className="inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium opacity-50 cursor-not-allowed"
+                                        >
+                                            {navLinkItem.label}
+                                        </button>
+                                    ) : (
                                         <Link
                                             href={navLinkItem.href}
                                             key={`auth-link-${idx}`}
