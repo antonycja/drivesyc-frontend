@@ -7,90 +7,61 @@ import {
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/components/auth/utils/authProvider';
-import { use, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import ApiProxy from '@/app/api/lib/proxy'
 
-// Import your dashboard and other view components
+// View components
 import OwnerDashboard from '@/components/pages/OwnerDashboard';
 import BookingsView from '@/components/pages/BookingsView';
 import CreateBookingView from '@/components/pages/CreateBookingView';
+import FinanceView from '@/components/pages/FinanceView';
+import AnalyticsDashboard from '@/components/pages/AnalyticsDashboard';
+import TrainingGroundsView from '@/components/pages/TrainingGroundsView';
+import TrailersView from '@/components/pages/TrailersView';
+import VehiclesView from '@/components/pages/VehiclesView';
+import StudentsView from '@/components/pages/StudentsView';
+import InstructorsView from '@/components/pages/InstructorsView';
+import CalendarView from '@/components/pages/CalendarView';
+import SettingsView from '@/components/pages/SettingsView';
+import usePolling from '@/hooks/usePolling';
 
-// Mock components for other views - replace with your actual components
-const InstructorsView = ({ onNavigate, formatNumber }) => (
-    <div className="flex flex-1 flex-col gap-6 p-4 pt-0">
-        <h2 className="text-2xl font-bold">All Instructors</h2>
-        <p className="text-muted-foreground">Instructor management will be implemented here.</p>
-        <div className="text-center p-8">
-            <p>This view will show all your driving instructors.</p>
-            <Button className="mt-4" onClick={() => onNavigate('dashboard')}>Back to Dashboard</Button>
+// Placeholder for views that are under construction
+function ComingSoonView({ title, onNavigate }) {
+    return (
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center">
+            <div className="rounded-full bg-gray-100 p-6">
+                <span className="text-4xl">🚧</span>
+            </div>
+            <h2 className="text-2xl font-bold">{title}</h2>
+            <p className="text-muted-foreground max-w-sm">
+                This section is under construction and will be available in a future
+                update.
+            </p>
+            <Button onClick={() => onNavigate('dashboard')}>Back to Dashboard</Button>
         </div>
-    </div>
-);
-
-const StudentsView = ({ onNavigate, formatNumber }) => (
-    <div className="flex flex-1 flex-col gap-6 p-4 pt-0">
-        <h2 className="text-2xl font-bold">All Students</h2>
-        <p className="text-muted-foreground">Student management will be implemented here.</p>
-        <div className="text-center p-8">
-            <p>This view will show all your students and their progress.</p>
-            <Button className="mt-4" onClick={() => onNavigate('dashboard')}>Back to Dashboard</Button>
-        </div>
-    </div>
-);
-
-const VehiclesView = ({ onNavigate, formatNumber }) => (
-    <div className="flex flex-1 flex-col gap-6 p-4 pt-0">
-        <h2 className="text-2xl font-bold">Fleet Management</h2>
-        <p className="text-muted-foreground">Vehicle management will be implemented here.</p>
-        <div className="text-center p-8">
-            <p>This view will show your vehicle fleet and maintenance schedules.</p>
-            <Button className="mt-4" onClick={() => onNavigate('dashboard')}>Back to Dashboard</Button>
-        </div>
-    </div>
-);
-
-const ReportsView = ({ onNavigate, formatNumber, formatCurrency }) => (
-    <div className="flex flex-1 flex-col gap-6 p-4 pt-0">
-        <h2 className="text-2xl font-bold">Reports & Analytics</h2>
-        <p className="text-muted-foreground">Business reports and analytics will be implemented here.</p>
-        <div className="text-center p-8">
-            <p>This view will show detailed business reports and analytics.</p>
-            <Button className="mt-4" onClick={() => onNavigate('dashboard')}>Back to Dashboard</Button>
-        </div>
-    </div>
-);
-
-const FinanceView = ({ onNavigate, formatNumber, formatCurrency }) => (
-    <div className="flex flex-1 flex-col gap-6 p-4 pt-0">
-        <h2 className="text-2xl font-bold">Finance Management</h2>
-        <p className="text-muted-foreground">Financial management will be implemented here.</p>
-        <div className="text-center p-8">
-            <p>This view will show payments, invoices, and expenses.</p>
-            <Button className="mt-4" onClick={() => onNavigate('dashboard')}>Back to Dashboard</Button>
-        </div>
-    </div>
-);
-
-const SettingsView = ({ onNavigate, auth }) => (
-    <div className="flex flex-1 flex-col gap-6 p-4 pt-0">
-        <h2 className="text-2xl font-bold">School Settings</h2>
-        <p className="text-muted-foreground">School configuration and settings will be implemented here.</p>
-        <div className="text-center p-8">
-            <p>This view will show school settings and configuration options.</p>
-            <Button className="mt-4" onClick={() => onNavigate('dashboard')}>Back to Dashboard</Button>
-        </div>
-    </div>
-);
+    );
+}
 
 export default function Page() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const auth = useAuth();
-    const [schoolStats, setSchoolStats] = useState(null);
-    const [loading, setLoading] = useState(true);
     const [currentTime, setCurrentTime] = useState(new Date());
     const [currentView, setCurrentView] = useState('dashboard');
+
+    // 30-second auto-refresh for school stats
+    const fetchStats = async () => {
+        const { data, status } = await ApiProxy.get('/api/stats');
+        if (status === 200) return data;
+        throw new Error(data?.message || 'Failed to fetch stats');
+    };
+
+    const {
+        data: schoolStats,
+        loading,
+        refresh: refreshData,
+    } = usePolling(fetchStats, 30000);
 
     // Helper functions for formatting
     const formatCurrency = (val) => {
@@ -120,27 +91,23 @@ export default function Page() {
         });
     };
 
-    // Initialize view from URL or localStorage
+    // Initialize view from URL params or localStorage
     useEffect(() => {
-        // Check for view in URL params first
         const viewParam = searchParams.get('view');
         if (viewParam) {
             setCurrentView(viewParam);
-            // Store in localStorage for persistence
             localStorage.setItem('currentView', viewParam);
             return;
         }
 
-        // Check for hash-based view
         if (typeof window !== 'undefined') {
-            const hash = window.location.hash.substring(1); // Remove #
+            const hash = window.location.hash.substring(1);
             if (hash) {
                 setCurrentView(hash);
                 localStorage.setItem('currentView', hash);
                 return;
             }
 
-            // Fallback to localStorage
             const storedView = localStorage.getItem('currentView');
             if (storedView) {
                 setCurrentView(storedView);
@@ -148,40 +115,30 @@ export default function Page() {
         }
     }, [searchParams]);
 
-    // Navigation handler with state persistence
+    // Navigation handler with URL + localStorage persistence
     const handleNavigation = (view) => {
-        console.log('🔥 Navigation called with view:', view);
         setCurrentView(view);
 
-        // Persist view state in multiple ways
         if (typeof window !== 'undefined') {
-            // Store in localStorage
             localStorage.setItem('currentView', view);
 
-            // Update URL without causing a page reload
             const newUrl = new URL(window.location);
             if (view !== 'dashboard') {
                 newUrl.searchParams.set('view', view);
             } else {
                 newUrl.searchParams.delete('view');
             }
-
-            // Use replaceState to update URL without navigation
             window.history.replaceState(null, '', newUrl.toString());
         }
-
-        console.log('🔥 Current view set to:', view);
     };
 
-    // Update time every minute
+    // Update clock every minute
     useEffect(() => {
-        const timer = setInterval(() => {
-            setCurrentTime(new Date());
-        }, 60000);
+        const timer = setInterval(() => setCurrentTime(new Date()), 60000);
         return () => clearInterval(timer);
     }, []);
 
-    // Auth and data fetching logic
+    // Auth guard
     useEffect(() => {
         if (!auth) return;
         if (auth.loading) return;
@@ -191,40 +148,9 @@ export default function Page() {
         }
         if (auth.user.role !== 'owner' && !auth.user.is_owner) {
             router.replace('/auth/login');
-            return;
         }
-
-        setLoading(true);
-        const fetchStats = async () => {
-            try {
-                const { data, status } = await ApiProxy.get('/api/stats');
-                if (status === 200) {
-                    setSchoolStats(data);
-                }
-            } catch (err) {
-                console.error('Error fetching stats:', err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchStats();
     }, [auth, router]);
 
-    const refreshData = async () => {
-        setLoading(true);
-        try {
-            const { data, status } = await ApiProxy.get('/api/stats');
-            if (status === 200) {
-                setSchoolStats(data);
-            }
-        } catch (err) {
-            console.error('Error refreshing stats:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // Show loading while fetching
     if (auth.loading || loading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
@@ -236,7 +162,6 @@ export default function Page() {
         );
     }
 
-    // Show error state
     if (auth.error || !auth.isAuthenticated || !auth.user) {
         return (
             <div className="flex items-center justify-center min-h-screen">
@@ -252,32 +177,71 @@ export default function Page() {
         );
     }
 
-    // Render different views based on currentView state
-    const renderCurrentView = () => {
-        const commonProps = {
-            onNavigate: handleNavigation,
-            formatNumber,
-            formatCurrency,
-            useAuth: useAuth
-        };
+    const commonProps = {
+        onNavigate: handleNavigation,
+        formatNumber,
+        formatCurrency,
+    };
 
+    const renderCurrentView = () => {
         switch (currentView) {
+            // ── Bookings ──────────────────────────────────────────────────
             case 'bookings':
                 return <BookingsView {...commonProps} />;
             case 'create-booking':
                 return <CreateBookingView {...commonProps} />;
+            case 'bookings-calendar':
+                return <CalendarView {...commonProps} />;
+
+            // ── Instructors ───────────────────────────────────────────────
             case 'instructors':
                 return <InstructorsView {...commonProps} />;
-            case 'students':
-                return <StudentsView {...commonProps} />;
+            case 'create-instructor':
+                return <ComingSoonView title="Add Instructor" onNavigate={handleNavigation} />;
+            case 'instructor-schedules':
+                return <ComingSoonView title="Instructor Schedules" onNavigate={handleNavigation} />;
+
+            // ── Vehicles ──────────────────────────────────────────────────
             case 'vehicles':
                 return <VehiclesView {...commonProps} />;
+            case 'create-vehicle':
+                return <VehiclesView {...commonProps} />;
+            case 'vehicle-maintenance':
+                return <ComingSoonView title="Vehicle Maintenance" onNavigate={handleNavigation} />;
+
+            // ── Students ──────────────────────────────────────────────────
+            case 'students':
+                return <StudentsView {...commonProps} />;
+            case 'student-progress':
+                return <ComingSoonView title="Student Progress" onNavigate={handleNavigation} />;
+
+            // ── Reports & Analytics ───────────────────────────────────────
             case 'reports':
-                return <ReportsView {...commonProps} />;
+            case 'analytics':
+            case 'revenue-reports':
+            case 'instructor-reports':
+            case 'student-reports':
+            case 'vehicle-reports':
+                return <AnalyticsDashboard {...commonProps} />;
+
+            // ── Finance ───────────────────────────────────────────────────
             case 'finance':
+            case 'finance-payments':
                 return <FinanceView {...commonProps} />;
+            case 'finance-invoices':
+                return <ComingSoonView title="Invoices" onNavigate={handleNavigation} />;
+            case 'finance-expenses':
+                return <ComingSoonView title="Expenses" onNavigate={handleNavigation} />;
+
+            // ── Other ─────────────────────────────────────────────────────
+            case 'training-grounds':
+                return <TrainingGroundsView {...commonProps} />;
+            case 'trailers':
+                return <TrailersView {...commonProps} />;
             case 'settings':
                 return <SettingsView {...commonProps} auth={auth} />;
+
+            // ── Default ───────────────────────────────────────────────────
             case 'dashboard':
             default:
                 return (
