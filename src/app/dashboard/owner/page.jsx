@@ -24,6 +24,7 @@ import StudentsView from '@/components/pages/StudentsView';
 import InstructorsView from '@/components/pages/InstructorsView';
 import CalendarView from '@/components/pages/CalendarView';
 import SettingsView from '@/components/pages/SettingsView';
+import EditBookingView from '@/components/pages/EditBookingView';
 import usePolling from '@/hooks/usePolling';
 
 // Placeholder for views that are under construction
@@ -43,12 +44,35 @@ function ComingSoonView({ title, onNavigate }) {
     );
 }
 
+// Views that are lazy-mounted: only rendered after the user first visits them.
+// This avoids mounting heavy or rarely-used components on initial page load.
+const LAZY_VIEWS = new Set([
+    'training-grounds',
+    'trailers',
+    'settings',
+    'create-instructor',
+    'instructor-schedules',
+    'vehicle-maintenance',
+    'student-progress',
+    'finance-invoices',
+    'finance-expenses',
+    'edit-booking',
+]);
+
 export default function Page() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const auth = useAuth();
     const [currentTime, setCurrentTime] = useState(new Date());
     const [currentView, setCurrentView] = useState('dashboard');
+
+    // navParams carries extra context when navigating programmatically,
+    // e.g. { bookingId: 42 } when jumping to edit-booking.
+    const [navParams, setNavParams] = useState({});
+
+    // Tracks which lazy views have been visited at least once so they stay
+    // mounted (and thus keep their state) after the first visit.
+    const [visitedViews, setVisitedViews] = useState(new Set(['dashboard']));
 
     // 30-second auto-refresh for school stats
     const fetchStats = async () => {
@@ -96,6 +120,7 @@ export default function Page() {
         const viewParam = searchParams.get('view');
         if (viewParam) {
             setCurrentView(viewParam);
+            setVisitedViews(prev => new Set([...prev, viewParam]));
             localStorage.setItem('currentView', viewParam);
             return;
         }
@@ -104,6 +129,7 @@ export default function Page() {
             const hash = window.location.hash.substring(1);
             if (hash) {
                 setCurrentView(hash);
+                setVisitedViews(prev => new Set([...prev, hash]));
                 localStorage.setItem('currentView', hash);
                 return;
             }
@@ -111,13 +137,20 @@ export default function Page() {
             const storedView = localStorage.getItem('currentView');
             if (storedView) {
                 setCurrentView(storedView);
+                setVisitedViews(prev => new Set([...prev, storedView]));
             }
         }
     }, [searchParams]);
 
-    // Navigation handler with URL + localStorage persistence
-    const handleNavigation = (view) => {
+    /**
+     * Central navigation handler.
+     * @param {string} view - The view key to navigate to.
+     * @param {Object} params - Optional extra params (e.g. { bookingId } for edit-booking).
+     */
+    const handleNavigation = (view, params = {}) => {
         setCurrentView(view);
+        setNavParams(params);
+        setVisitedViews(prev => new Set([...prev, view]));
 
         if (typeof window !== 'undefined') {
             localStorage.setItem('currentView', view);
@@ -183,68 +216,22 @@ export default function Page() {
         formatCurrency,
     };
 
-    const renderCurrentView = () => {
-        switch (currentView) {
-            // ── Bookings ──────────────────────────────────────────────────
-            case 'bookings':
-                return <BookingsView {...commonProps} />;
-            case 'create-booking':
-                return <CreateBookingView {...commonProps} />;
-            case 'bookings-calendar':
-                return <CalendarView {...commonProps} />;
+    // Returns '' (visible) when this is the active view, 'hidden' otherwise.
+    const show = (view) => (currentView === view ? '' : 'hidden');
 
-            // ── Instructors ───────────────────────────────────────────────
-            case 'instructors':
-                return <InstructorsView {...commonProps} />;
-            case 'create-instructor':
-                return <ComingSoonView title="Add Instructor" onNavigate={handleNavigation} />;
-            case 'instructor-schedules':
-                return <ComingSoonView title="Instructor Schedules" onNavigate={handleNavigation} />;
+    // Returns true when a view should be rendered into the DOM.
+    // Lazy views are only mounted after the user has visited them once.
+    const shouldMount = (view) => !LAZY_VIEWS.has(view) || visitedViews.has(view);
 
-            // ── Vehicles ──────────────────────────────────────────────────
-            case 'vehicles':
-                return <VehiclesView {...commonProps} />;
-            case 'create-vehicle':
-                return <VehiclesView {...commonProps} />;
-            case 'vehicle-maintenance':
-                return <ComingSoonView title="Vehicle Maintenance" onNavigate={handleNavigation} />;
+    return (
+        <SidebarProvider className="pt-[15vh] px-2 bg-white dark:bg-gray-900">
+            <AppSidebar onNavigate={handleNavigation} currentView={currentView} />
+            <SidebarInset className="overflow-auto">
 
-            // ── Students ──────────────────────────────────────────────────
-            case 'students':
-                return <StudentsView {...commonProps} />;
-            case 'student-progress':
-                return <ComingSoonView title="Student Progress" onNavigate={handleNavigation} />;
+                {/* ── Always-mounted views ──────────────────────────────────── */}
 
-            // ── Reports & Analytics ───────────────────────────────────────
-            case 'reports':
-            case 'analytics':
-            case 'revenue-reports':
-            case 'instructor-reports':
-            case 'student-reports':
-            case 'vehicle-reports':
-                return <AnalyticsDashboard {...commonProps} />;
-
-            // ── Finance ───────────────────────────────────────────────────
-            case 'finance':
-            case 'finance-payments':
-                return <FinanceView {...commonProps} />;
-            case 'finance-invoices':
-                return <ComingSoonView title="Invoices" onNavigate={handleNavigation} />;
-            case 'finance-expenses':
-                return <ComingSoonView title="Expenses" onNavigate={handleNavigation} />;
-
-            // ── Other ─────────────────────────────────────────────────────
-            case 'training-grounds':
-                return <TrainingGroundsView {...commonProps} />;
-            case 'trailers':
-                return <TrailersView {...commonProps} />;
-            case 'settings':
-                return <SettingsView {...commonProps} auth={auth} />;
-
-            // ── Default ───────────────────────────────────────────────────
-            case 'dashboard':
-            default:
-                return (
+                {/* Dashboard */}
+                <div className={show('dashboard')}>
                     <OwnerDashboard
                         schoolStats={schoolStats}
                         loading={loading}
@@ -257,15 +244,123 @@ export default function Page() {
                         refreshData={refreshData}
                         onNavigate={handleNavigation}
                     />
-                );
-        }
-    };
+                </div>
 
-    return (
-        <SidebarProvider className="pt-[15vh] px-2 bg-white dark:bg-gray-900">
-            <AppSidebar onNavigate={handleNavigation} currentView={currentView} />
-            <SidebarInset>
-                {renderCurrentView()}
+                {/* Bookings list */}
+                <div className={show('bookings')}>
+                    <BookingsView {...commonProps} />
+                </div>
+
+                {/* Create booking */}
+                <div className={show('create-booking')}>
+                    <CreateBookingView {...commonProps} />
+                </div>
+
+                {/* Edit booking — lazy, carries bookingId via navParams */}
+                {shouldMount('edit-booking') && (
+                    <div className={show('edit-booking')}>
+                        <EditBookingView
+                            bookingId={navParams.bookingId || null}
+                            onNavigate={handleNavigation}
+                        />
+                    </div>
+                )}
+
+                {/* Calendar */}
+                <div className={show('bookings-calendar')}>
+                    <CalendarView {...commonProps} />
+                </div>
+
+                {/* Instructors */}
+                <div className={show('instructors')}>
+                    <InstructorsView {...commonProps} />
+                </div>
+
+                {/* Vehicles — create-vehicle reuses VehiclesView (matches old behaviour) */}
+                <div className={show('vehicles')}>
+                    <VehiclesView {...commonProps} />
+                </div>
+                <div className={show('create-vehicle')}>
+                    <VehiclesView {...commonProps} />
+                </div>
+
+                {/* Students */}
+                <div className={show('students')}>
+                    <StudentsView {...commonProps} />
+                </div>
+
+                {/* Reports / Analytics — multiple nav keys map to the same component */}
+                {['reports', 'analytics', 'revenue-reports', 'instructor-reports', 'student-reports', 'vehicle-reports'].map((view) => (
+                    <div key={view} className={show(view)}>
+                        <AnalyticsDashboard {...commonProps} />
+                    </div>
+                ))}
+
+                {/* Finance */}
+                <div className={show('finance')}>
+                    <FinanceView {...commonProps} />
+                </div>
+                <div className={show('finance-payments')}>
+                    <FinanceView {...commonProps} />
+                </div>
+
+                {/* ── Lazy-mounted views ────────────────────────────────────── */}
+
+                {shouldMount('training-grounds') && (
+                    <div className={show('training-grounds')}>
+                        <TrainingGroundsView {...commonProps} />
+                    </div>
+                )}
+
+                {shouldMount('trailers') && (
+                    <div className={show('trailers')}>
+                        <TrailersView {...commonProps} />
+                    </div>
+                )}
+
+                {shouldMount('settings') && (
+                    <div className={show('settings')}>
+                        <SettingsView {...commonProps} auth={auth} />
+                    </div>
+                )}
+
+                {/* Coming-soon lazy views */}
+                {shouldMount('create-instructor') && (
+                    <div className={show('create-instructor')}>
+                        <ComingSoonView title="Add Instructor" onNavigate={handleNavigation} />
+                    </div>
+                )}
+
+                {shouldMount('instructor-schedules') && (
+                    <div className={show('instructor-schedules')}>
+                        <ComingSoonView title="Instructor Schedules" onNavigate={handleNavigation} />
+                    </div>
+                )}
+
+                {shouldMount('vehicle-maintenance') && (
+                    <div className={show('vehicle-maintenance')}>
+                        <ComingSoonView title="Vehicle Maintenance" onNavigate={handleNavigation} />
+                    </div>
+                )}
+
+                {shouldMount('student-progress') && (
+                    <div className={show('student-progress')}>
+                        <ComingSoonView title="Student Progress" onNavigate={handleNavigation} />
+                    </div>
+                )}
+
+                {shouldMount('finance-invoices') && (
+                    <div className={show('finance-invoices')}>
+                        <ComingSoonView title="Invoices" onNavigate={handleNavigation} />
+                    </div>
+                )}
+
+                {shouldMount('finance-expenses') && (
+                    <div className={show('finance-expenses')}>
+                        <ComingSoonView title="Expenses" onNavigate={handleNavigation} />
+                    </div>
+                )}
+
             </SidebarInset>
         </SidebarProvider>
     )

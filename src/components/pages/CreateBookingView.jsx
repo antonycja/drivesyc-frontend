@@ -100,7 +100,7 @@ export default function CreateBookingView({ onNavigate, onBack }) {
     const showStudentSelection = currentUser && (currentUser.role === 'admin' || currentUser.role === 'owner' || currentUser.role === 'super_admin');
 
     return (
-        <div className="flex flex-1 flex-col gap-6 p-4 pt-0 max-w-6xl mx-auto">
+        <div className="flex flex-1 flex-col gap-6 p-4 pt-0 max-w-[1600px] mx-auto w-full">
             <BookingHeader />
 
             <form onSubmit={handleSubmit} className="space-y-6">

@@ -1,6 +1,6 @@
 import { Card, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Search, X } from "lucide-react";
+import { Search, X, ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function BookingsFilters({
     isScrolled,
@@ -19,8 +19,17 @@ export default function BookingsFilters({
     activeFilterCount,
     onClearFilters,
     filteredCount,
-    totalCount
+    totalCount,
+    // Pagination props
+    currentPage,
+    totalPages,
+    pageStart,
+    pageEnd,
+    onPageChange,
 }) {
+    const hasPrev = currentPage > 1;
+    const hasNext = currentPage < totalPages;
+
     return (
         <div className={`sticky z-40 border-b transition-all duration-300 ease-in-out ${isScrolled ? 'top-19 bg-transparent' : 'top-0'
             }`}>
@@ -32,6 +41,7 @@ export default function BookingsFilters({
                         }`}>
                         <div className={`flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-3 lg:space-y-0 ${isScrolled && "px-2"
                             }`}>
+                            {/* Filter controls */}
                             <div className={`flex items-center flex-wrap transition-all duration-300 ${isScrolled ? 'gap-1' : 'gap-2'
                                 }`}>
                                 <div className="relative">
@@ -53,10 +63,11 @@ export default function BookingsFilters({
                                     onChange={(e) => setStatusFilter(e.target.value)}
                                 >
                                     <option value="all">{isScrolled ? 'Status' : 'All Status'}</option>
-                                    <option value="confirmed">Confirmed</option>
+                                    <option value="scheduled">Scheduled</option>
                                     <option value="completed">Completed</option>
                                     <option value="pending">Pending</option>
                                     <option value="cancelled">Cancelled</option>
+                                    <option value="no_show">No Show</option>
                                 </select>
 
                                 <select
@@ -122,15 +133,53 @@ export default function BookingsFilters({
                                 )}
                             </div>
 
-                            {!isScrolled ? (
-                                <p className="text-sm text-muted-foreground whitespace-nowrap">
-                                    Showing {filteredCount} of {totalCount} bookings
-                                </p>
-                            ) : (
-                                <p className="text-xs text-muted-foreground whitespace-nowrap">
-                                    Showing {filteredCount} of {totalCount} bookings
-                                </p>
-                            )}
+                            {/* Count + pagination */}
+                            <div className="flex items-center gap-3 whitespace-nowrap">
+                                {!isScrolled ? (
+                                    <p className="text-sm text-muted-foreground">
+                                        {filteredCount === 0
+                                            ? 'No bookings'
+                                            : `Showing ${pageStart + 1}–${pageEnd} of ${filteredCount}`}
+                                        {filteredCount !== totalCount && (
+                                            <span className="text-xs ml-1">(filtered from {totalCount})</span>
+                                        )}
+                                    </p>
+                                ) : (
+                                    <p className="text-xs text-muted-foreground">
+                                        {filteredCount === 0
+                                            ? '0'
+                                            : `${pageStart + 1}–${pageEnd}/${filteredCount}`}
+                                    </p>
+                                )}
+
+                                {totalPages > 1 && (
+                                    <div className="flex items-center gap-1">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="h-8 w-8 p-0"
+                                            onClick={() => onPageChange(currentPage - 1)}
+                                            disabled={!hasPrev}
+                                            aria-label="Previous page"
+                                        >
+                                            <ChevronLeft className="h-4 w-4" />
+                                        </Button>
+                                        <span className={`${isScrolled ? 'text-xs' : 'text-sm'} text-muted-foreground px-1`}>
+                                            {isScrolled ? `${currentPage}/${totalPages}` : `Page ${currentPage} of ${totalPages}`}
+                                        </span>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="h-8 w-8 p-0"
+                                            onClick={() => onPageChange(currentPage + 1)}
+                                            disabled={!hasNext}
+                                            aria-label="Next page"
+                                        >
+                                            <ChevronRight className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </CardHeader>
                 </Card>

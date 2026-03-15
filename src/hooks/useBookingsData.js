@@ -48,17 +48,7 @@ export function useBookingsData({
                     created_at_local: convertUTCToLocal(booking.created_at)
                 }));
 
-                const now = new Date();
-                const upcoming = bookingsWithLocalDates
-                    .filter(b => b.scheduled_start_local && b.scheduled_start_local >= now)
-                    .sort((a, b) => a.scheduled_start_local - b.scheduled_start_local);
-
-                const past = bookingsWithLocalDates
-                    .filter(b => b.scheduled_start_local && b.scheduled_start_local < now)
-                    .sort((a, b) => b.scheduled_start_local - a.scheduled_start_local);
-
-                const sorted = [...upcoming, ...past];
-                setBookings(sorted);
+                setBookings(bookingsWithLocalDates);
             }
         } catch (err) {
             console.error("Error fetching bookings:", err);

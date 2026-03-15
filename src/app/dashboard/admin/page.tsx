@@ -14,6 +14,9 @@ import CreateBookingView from '@/components/pages/CreateBookingView';
 import AnalyticsDashboard from '@/components/pages/AnalyticsDashboard';
 import FinanceView from '@/components/pages/FinanceView';
 
+// Views only mounted after first visit (lazy)
+const LAZY_VIEWS = new Set(['edit-booking']);
+
 export default function AdminDashboardPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -23,6 +26,8 @@ export default function AdminDashboardPage() {
     const [loading, setLoading] = useState(true);
     const [currentView, setCurrentView] = useState('dashboard');
     const [currentTime, setCurrentTime] = useState(new Date());
+    const [navParams, setNavParams] = useState<Record<string, any>>({});
+    const [visitedViews, setVisitedViews] = useState(new Set<string>(['dashboard']));
 
     const formatCurrency = (val: number) => {
         if (val === null || val === undefined || isNaN(val)) return 'R0';
@@ -50,18 +55,28 @@ export default function AdminDashboardPage() {
         const viewParam = searchParams.get('view');
         if (viewParam) {
             setCurrentView(viewParam);
+            setVisitedViews(prev => new Set([...prev, viewParam]));
             return;
         }
         if (typeof window !== 'undefined') {
             const hash = window.location.hash.substring(1);
-            if (hash) { setCurrentView(hash); return; }
+            if (hash) {
+                setCurrentView(hash);
+                setVisitedViews(prev => new Set([...prev, hash]));
+                return;
+            }
             const stored = localStorage.getItem('adminCurrentView');
-            if (stored) setCurrentView(stored);
+            if (stored) {
+                setCurrentView(stored);
+                setVisitedViews(prev => new Set([...prev, stored]));
+            }
         }
     }, [searchParams]);
 
-    const handleNavigation = (view: string) => {
+    const handleNavigation = (view: string, params: Record<string, any> = {}) => {
         setCurrentView(view);
+        setNavParams(params);
+        setVisitedViews(prev => new Set([...prev, view]));
         if (typeof window !== 'undefined') {
             localStorage.setItem('adminCurrentView', view);
             const newUrl = new URL(window.location.href);
@@ -142,20 +157,16 @@ export default function AdminDashboardPage() {
 
     const commonProps = { onNavigate: handleNavigation, formatNumber, formatCurrency };
 
-    const renderCurrentView = () => {
-        switch (currentView) {
-            case 'bookings':
-                return <BookingsView {...commonProps} />;
-            case 'create-booking':
-                return <CreateBookingView {...commonProps} />;
-            case 'reports':
-            case 'analytics':
-                return <AnalyticsDashboard {...commonProps} />;
-            case 'finance':
-                return <FinanceView {...commonProps} />;
-            case 'dashboard':
-            default:
-                return (
+    const show = (view: string) => (currentView === view ? '' : 'hidden');
+    const shouldMount = (view: string) => !LAZY_VIEWS.has(view) || visitedViews.has(view);
+
+    return (
+        <SidebarProvider className="pt-[15vh] px-2 bg-white dark:bg-gray-900">
+            <AppSidebar onNavigate={handleNavigation} currentView={currentView} />
+            <SidebarInset className="overflow-auto">
+
+                {/* Dashboard */}
+                <div className={show('dashboard')}>
                     <OwnerDashboard
                         schoolStats={schoolStats}
                         loading={loading}
@@ -168,14 +179,38 @@ export default function AdminDashboardPage() {
                         refreshData={refreshData}
                         onNavigate={handleNavigation}
                     />
-                );
-        }
-    };
+                </div>
 
-    return (
-        <SidebarProvider className="pt-[15vh] px-2 bg-white dark:bg-gray-900">
-            <AppSidebar onNavigate={handleNavigation} currentView={currentView} />
-            <SidebarInset>{renderCurrentView()}</SidebarInset>
+                {/* Bookings */}
+                <div className={show('bookings')}>
+                    <BookingsView {...commonProps} />
+                </div>
+
+                {/* Create booking */}
+                <div className={show('create-booking')}>
+                    <CreateBookingView {...commonProps} />
+                </div>
+
+                {/* Edit booking — lazy */}
+                {shouldMount('edit-booking') && (
+                    <div className={show('edit-booking')}>
+                        <CreateBookingView {...commonProps} bookingId={navParams.bookingId || null} />
+                    </div>
+                )}
+
+                {/* Reports / Analytics */}
+                {(['reports', 'analytics'] as const).map((view) => (
+                    <div key={view} className={show(view)}>
+                        <AnalyticsDashboard {...commonProps} />
+                    </div>
+                ))}
+
+                {/* Finance */}
+                <div className={show('finance')}>
+                    <FinanceView {...commonProps} />
+                </div>
+
+            </SidebarInset>
         </SidebarProvider>
     );
 }

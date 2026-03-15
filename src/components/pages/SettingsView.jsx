@@ -60,7 +60,7 @@ export default function SettingsView({ onNavigate, auth }) {
     const user = auth?.user;
 
     return (
-        <div className="flex flex-col gap-6 p-4 pt-0 max-w-2xl">
+        <div className="flex flex-1 flex-col gap-6 p-4 pt-0 max-w-2xl w-full">
             {/* Header */}
             <div className="flex items-center justify-between flex-wrap gap-3">
                 <div className="flex items-center gap-3">

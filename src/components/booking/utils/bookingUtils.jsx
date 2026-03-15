@@ -53,3 +53,46 @@ export const isPast = (dateObj) => {
     if (!dateObj || !(dateObj instanceof Date)) return false;
     return dateObj < new Date();
 };
+
+/**
+ * Sort order:
+ *   1. Upcoming active (scheduled/pending, date ≥ now)  — soonest first
+ *   2. Everything else (past, completed, cancelled …)   — most recent first
+ *
+ * Status is a tiebreaker within the same timestamp.
+ * Status order: scheduled → pending → completed → no_show → cancelled → deleted
+ */
+const STATUS_ORDER = { scheduled: 0, pending: 1, completed: 2, no_show: 3, cancelled: 4, deleted: 5 };
+
+const ACTIVE_STATUSES = new Set(["scheduled", "pending"]);
+
+export const sortBookings = (bookings) => {
+    if (!Array.isArray(bookings) || bookings.length === 0) return bookings;
+
+    const now = new Date();
+
+    const isUpcomingActive = (booking) => {
+        const d = booking.scheduled_start_local;
+        return d && d >= now && ACTIVE_STATUSES.has((booking.status || "").toLowerCase());
+    };
+
+    return [...bookings].sort((a, b) => {
+        const ua = isUpcomingActive(a);
+        const ub = isUpcomingActive(b);
+
+        if (ua !== ub) return ua ? -1 : 1;
+
+        const da = a.scheduled_start_local;
+        const db = b.scheduled_start_local;
+
+        if (da && db) {
+            const diff = ua ? da - db : db - da;
+            if (diff !== 0) return diff;
+        } else if (da) return -1;
+        else if (db) return 1;
+
+        const sa = STATUS_ORDER[(a.status || "").toLowerCase()] ?? 99;
+        const sb = STATUS_ORDER[(b.status || "").toLowerCase()] ?? 99;
+        return sa - sb;
+    });
+};

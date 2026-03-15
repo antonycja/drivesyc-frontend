@@ -66,7 +66,7 @@ export default function StudentsView({ onNavigate }) {
     };
 
     return (
-        <div className="flex flex-col gap-6 p-4 pt-0">
+        <div className="flex flex-1 flex-col gap-6 p-4 pt-0 max-w-[1600px] mx-auto w-full">
             {/* Header */}
             <div className="flex items-center justify-between flex-wrap gap-3">
                 <div className="flex items-center gap-3">
