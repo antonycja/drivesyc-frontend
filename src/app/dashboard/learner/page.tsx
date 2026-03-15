@@ -54,7 +54,7 @@ export default function LearnerDashboardPage() {
     }
 
     return (
-        <SidebarProvider className="pt-[15vh] px-2 bg-white dark:bg-gray-900">
+        <SidebarProvider className="pt-20 px-2 bg-white dark:bg-gray-900">
             <AppSidebar onNavigate={handleNavigation} currentView="dashboard" />
             <SidebarInset>
                 <LearnerProgressView onNavigate={handleNavigation} auth={auth} />

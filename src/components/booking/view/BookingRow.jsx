@@ -17,11 +17,12 @@ const STATUS_BADGE_COLORS = {
     no_show: 'bg-red-100 text-red-800 border-red-200',
 };
 
-export default function BookingRow({ booking, onSelect, onPayment, onCancel, onComplete }) {
+export default function BookingRow({ booking, onSelect, onPayment, onCancel, onComplete, past: pastProp }) {
     const [actionLoading, setActionLoading] = useState(null); // 'cancel' | 'complete' | null
     const statusKey = booking.status?.toLowerCase();
     const statusColor = STATUS_BADGE_COLORS[statusKey] || STATUS_BADGE_COLORS.pending;
-    const past = isPast(booking.scheduled_start_local);
+    // Use explicit past prop from table (which knows the sort context), fall back to date check
+    const past = pastProp !== undefined ? pastProp : isPast(booking.scheduled_start_local);
     const isTerminal = statusKey === 'completed' || statusKey === 'cancelled' || statusKey === 'deleted';
 
     const learnerName =
@@ -82,7 +83,9 @@ export default function BookingRow({ booking, onSelect, onPayment, onCancel, onC
             onClick={handleRowClick}
             className={[
                 'border-b cursor-pointer transition-colors',
-                past ? 'bg-gray-50/60 text-gray-600 hover:bg-gray-100/70' : 'hover:bg-muted/50',
+                past
+                    ? 'bg-slate-50 text-slate-500 hover:bg-slate-100 opacity-75'
+                    : 'hover:bg-muted/50',
             ].join(' ')}
         >
             {/* Learner */}

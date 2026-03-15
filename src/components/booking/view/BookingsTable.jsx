@@ -1,6 +1,14 @@
 import { Button } from '@/components/ui/button';
 import { Plus, CalendarOff } from 'lucide-react';
 import BookingRow from '@/components/booking/view/BookingRow';
+import { isPast } from '@/components/booking/utils/bookingUtils';
+
+const ACTIVE_STATUSES = new Set(['scheduled', 'pending']);
+
+const isUpcomingActive = (booking) => {
+    const d = booking.scheduled_start_local;
+    return d && !isPast(d) && ACTIVE_STATUSES.has((booking.status || '').toLowerCase());
+};
 
 /** Number of skeleton columns — must match the real table header count */
 const SKELETON_COLS = 9;
@@ -82,16 +90,33 @@ export default function BookingsTable({
                             </tr>
                         ))
                     ) : bookings.length > 0 ? (
-                        bookings.map((booking) => (
-                            <BookingRow
-                                key={booking.id}
-                                booking={booking}
-                                onSelect={onSelectBooking}
-                                onPayment={onPayment}
-                                onCancel={onCancel}
-                                onComplete={onComplete}
-                            />
-                        ))
+                        bookings.reduce((rows, booking, i) => {
+                            const prev = bookings[i - 1];
+                            // Insert a divider when transitioning from upcoming-active to everything else
+                            if (i > 0 && isUpcomingActive(prev) && !isUpcomingActive(booking)) {
+                                rows.push(
+                                    <tr key="past-divider">
+                                        <td colSpan={SKELETON_COLS} className="px-4 py-1.5 bg-slate-100 border-y border-slate-200">
+                                            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                                Past &amp; Completed
+                                            </span>
+                                        </td>
+                                    </tr>
+                                );
+                            }
+                            rows.push(
+                                <BookingRow
+                                    key={booking.id}
+                                    booking={booking}
+                                    past={!isUpcomingActive(booking)}
+                                    onSelect={onSelectBooking}
+                                    onPayment={onPayment}
+                                    onCancel={onCancel}
+                                    onComplete={onComplete}
+                                />
+                            );
+                            return rows;
+                        }, [])
                     ) : (
                         <tr>
                             <td colSpan={SKELETON_COLS} className="text-center p-12 text-muted-foreground">

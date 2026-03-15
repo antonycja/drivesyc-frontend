@@ -31,8 +31,7 @@ export default function BookingsFilters({
     const hasNext = currentPage < totalPages;
 
     return (
-        <div className={`sticky z-40 border-b transition-all duration-300 ease-in-out ${isScrolled ? 'top-19 bg-transparent' : 'top-0'
-            }`}>
+        <div className="sticky top-20 z-40 border-b bg-background">
             <div className={`transition-all duration-300 ease-in-out ${isScrolled ? 'px-4 py-2' : 'p-4'
                 }`}>
                 <Card className={`transition-all duration-300 ease-in-out ${isScrolled ? 'shadow-md border-2 py-0 ' : 'shadow-sm py-2'

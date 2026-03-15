@@ -161,9 +161,9 @@ export default function AdminDashboardPage() {
     const shouldMount = (view: string) => !LAZY_VIEWS.has(view) || visitedViews.has(view);
 
     return (
-        <SidebarProvider className="pt-[15vh] px-2 bg-white dark:bg-gray-900">
+        <SidebarProvider className="pt-20 px-2 bg-white dark:bg-gray-900">
             <AppSidebar onNavigate={handleNavigation} currentView={currentView} />
-            <SidebarInset className="overflow-auto">
+            <SidebarInset>
 
                 {/* Dashboard */}
                 <div className={show('dashboard')}>
